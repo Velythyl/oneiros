@@ -1,0 +1,8 @@
+env_key: ???  # FILLED IN CODE
+
+num_env: ???  # FILLED IN CODE
+
+max_episode_length: ??? # FILLED IN CODE
+action_repeat: ??? # FILLED IN CODE
+framestack: ??? # FILLED IN CODE
+device: ??? # FILLED IN CODE

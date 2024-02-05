@@ -1,0 +1,7 @@
+env_key: braxgeneralized-halfcheetah
+
+num_env: 10
+
+max_episode_length: 1000
+action_repeat: 1  # todo
+framestack: 1 # todo

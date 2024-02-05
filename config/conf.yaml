@@ -1,0 +1,4 @@
+defaults:
+  - wandb: wandb
+  - rl: ppo
+  - sim2sim: brax2brax

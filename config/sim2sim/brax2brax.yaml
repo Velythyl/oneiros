@@ -1,0 +1,18 @@
+sim2sim_name: brax2brax
+
+train_env:
+  - braxgeneralized-halfcheetah
+
+eval_env:
+  - braxspring-halfcheetah
+  - braxpositional-halfcheetah
+
+
+num_train_env: 10 # per elem in list
+num_eval_env: 10  # per elem in list
+
+max_episode_length: 1000  #
+action_repeat: 1  # todo
+framestack: 1 # todo
+
+device: "gpu" # always silently falls back to cpu in case of issue

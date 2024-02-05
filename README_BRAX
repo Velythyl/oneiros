@@ -1,0 +1,7 @@
+1. create venv/conda
+2. go to brax, do `pip3 install -e .`
+3. install jax cuda with `pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html`
+4. install torch with SPECIFIED cuda versions `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+5. install moviepy with `pip install moviepy`
+6. install opencv-python
+7. install tqdm

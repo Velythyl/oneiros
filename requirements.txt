@@ -1,0 +1,12 @@
+torch
+torchvision
+tensorboard
+transforms3d
+opencv-python
+moviepy
+matplotlib
+pynvml
+wandb
+hydra-core
+seaborn
+plotly

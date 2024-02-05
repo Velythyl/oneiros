@@ -1,0 +1,12 @@
+defaults:
+  - env@train:
+    - bg-halfcheetah
+  - env@eval:
+    - bs-bp-halfcheetah
+
+device: gpu # falls back to cpu if needed no matter what
+
+num_env: None
+max_episode_length: None
+action_repeat: None
+framestack: None

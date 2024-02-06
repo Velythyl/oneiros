@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 
 
-def record(nsteps, video_envs, agent, RUN_DIR):
+def record(nsteps, video_envs, agent, RUN_DIR, NUM_STEPS):
     video_envs = video_envs
 
     if video_envs is None:
@@ -18,13 +18,13 @@ def record(nsteps, video_envs, agent, RUN_DIR):
 
     # collect frames
     x = render()
-    for _ in tqdm(range(0, 100)): # todo this should match the max ep len , something like (max_ep_len // 2 -1 )
+    for _ in tqdm(range(0, NUM_STEPS)): # todo this should match the max ep len , something like (max_ep_len // 2 -1 )
         with torch.no_grad():
             action = agent.get_action(next_obs)
         frame_list.append(x)
         next_obs, _, done, info = video_envs.step(action)
         # print(done.any())
-        x = render()
+        x = video_envs.render()
 
     FPS = 30
     import cv2

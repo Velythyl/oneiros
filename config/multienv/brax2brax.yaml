@@ -4,9 +4,14 @@ defaults:
   - env@eval:
     - bs-bp-halfcheetah
 
-device: gpu # falls back to cpu if needed no matter what
+device: cuda # falls back to cpu if needed no matter what
 
 num_env: None
 max_episode_length: None
 action_repeat: None
 framestack: None
+
+eval_freq: 1000
+num_eval_steps: 500
+video_freq: 2000
+num_video_steps: 1000

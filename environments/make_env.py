@@ -1,5 +1,6 @@
 import copy
 import functools
+from typing import Any, Tuple
 
 from flax import struct
 import gym
@@ -11,7 +12,6 @@ from environments.wrappers.jax_wrappers.gym import VectorGymWrapper
 from environments.wrappers.multiplex import MultiPlexEnv
 from environments.wrappers.recordepisodestatisticstorch import RecordEpisodeStatisticsTorch
 from environments.wrappers.renderwrap import RenderWrap
-from environments.wrappers.rundir import rundir
 from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
@@ -108,8 +108,6 @@ def make_brax(brax_cfg):
     env = VectorGymWrapper(env, seed=0)  # todo
     env = TorchWrapper(env, device=brax_cfg.device)
 
-    env.ONEIROS_DEVICE = brax_cfg.device
-
     return env
 
 
@@ -118,8 +116,22 @@ def make_mujoco(mujoco_cfg):
     if not startswith(mujoco_cfg, "mujoco"):
         return None
 
+@struct.dataclass
+class EnvMetaData:
+    cfg: Any
 
-def make_multiplex(multiplex_env_cfg):
+    single_action_space: Tuple
+    single_observation_space: Tuple
+
+    multi_action_space: Tuple
+    multi_observation_space: Tuple
+
+    @property
+    def env_key(self):
+        return self.cfg.env_key
+
+
+def make_multiplex(multiplex_env_cfg, seed):
     base_envs = []
     for sliced_multiplex in splat_multiplex(multiplex_env_cfg):
         base_envs += make_brax(sliced_multiplex)
@@ -129,60 +141,43 @@ def make_multiplex(multiplex_env_cfg):
     assert len(base_envs) == num_multiplex(multiplex_env_cfg)
 
     def single_action_space(env):
-        return env.action_space.shape[-1]
+        return (env.action_space.shape[-1],)
 
     def single_observation_space(env):
-        return env.observation_space.shape[-1]
+        return (env.observation_space.shape[-1],)
+
+    def num_envs(env):
+        assert env.observation_space.shape[0] == env.action_space.shape[0]
+        return env.observation_space.shape[0]
 
     PROTO_ACT = single_action_space(base_envs[0])
     PROTO_OBS = single_observation_space(base_envs[0])
-    PROTO_DEVICE = base_envs[0].ONEIROS_DEVICE
+    PROTO_NUM_ENV = num_envs(base_envs[0])
+
+    def metadata_maker(cfg, num_env):
+        return EnvMetaData(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS))
 
     for i, env in enumerate(base_envs):
         env = RenderWrap(env)
+        env = RecordEpisodeStatisticsTorch(env, device=multiplex_env_cfg.device[0], num_envs=slice_multiplex(multiplex_env_cfg, i).num_env)
         env = InfoLogWrap(env, prefix=envkey_multiplex(slice_multiplex(multiplex_env_cfg, i)))
 
         assert single_action_space(env) == PROTO_ACT
         assert single_observation_space(env) == PROTO_OBS
-        assert PROTO_DEVICE == env.ONEIROS_DEVICE
+        assert num_envs(env) == PROTO_NUM_ENV
 
+        def assigns(e):
+            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), PROTO_NUM_ENV)
+            bind(e, traverse_envstack)
+            bind(e, get_envstack)
+        traverse_envstack(env, [assigns])
         base_envs[i] = env
 
-    env = MultiPlexEnv(base_envs, PROTO_DEVICE)
+    env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0])
 
-    # "hopper"  # @param ['ant', 'fetch', 'grasp', 'halfcheetah', 'hopper', 'humanoid', 'humanoidstandup', 'pusher', 'reacher', 'walker2d', 'grasp', 'ur5e']
+    assert env.observation_space.shape[0] == PROTO_NUM_ENV * len(base_envs)
 
-    from environments.wrappers.jax_wrappers.gym import VectorGymWrapper
-
-    env = VectorGymWrapper(env, seed=env_config.seed)
-    env = TorchWrapper(env_with_the_stacks, device=DEVICE)
-    env = RenderWrap(env)
-    env = RecordEpisodeStatisticsTorch(env, DEVICE, num_envs=NUM_ENVS)
-
-    env = InfoLogWrap(env_traindata, prefix=prefix)
-
-    env.action_space = env.action_space
-    env.many_action_space = env.action_space
-    env.single_action_space = gym.spaces.Box(low=env.action_space.low.min(), high=env.action_space.high.max(),
-                                             shape=env.action_space.shape[1:])
-
-    # envs.observation_space = env.observation_space
-    env.many_observation_space = env.observation_space
-    env.single_observation_space = gym.spaces.Box(low=env.observation_space.low.min(),
-                                                  high=env.observation_space.high.max(),
-                                                  shape=env.observation_space.shape[1:])
-    env.num_envs = NUM_ENVS
-    assert isinstance(env.single_action_space, gym.spaces.Box), "only continuous action space is supported"
-
-    def assigns(e):
-        e.env_name = env_config.env_id
-        e.num_envs = NUM_ENVS
-        bind(e, traverse_envstack)
-        bind(e, get_envstack)
-        e.MAX_EPISODE_LENGTH = EPISODE_LENGTH
-
-    traverse_envstack(env, [assigns])
-    x = env.reset()
+    env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, PROTO_NUM_ENV * len(base_envs))
 
     return env
 
@@ -207,6 +202,12 @@ def slice_multiplex(multiplex_cfg, index):
 
     return EVAL_CONFIG
 
+def monad_multiplex(multiplex_cfg):
+    EVAL_CONFIG = copy.deepcopy(multiplex_cfg)
+    for k in keys_multiplex(multiplex_cfg):
+        EVAL_CONFIG[k] = [multiplex_cfg[k]]
+    return EVAL_CONFIG
+
 
 def splat_multiplex(multiplex_cfg):
     ret = []
@@ -215,7 +216,7 @@ def splat_multiplex(multiplex_cfg):
     return ret
 
 
-def make_sim2sim(multienv_cfg):
+def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     for key in ["num_env", "max_episode_length", "action_repeat", "framestack"]:
         if multienv_cfg[key] not in ["None", None]:
             multienv_cfg.train[key] = multienv_cfg[key]
@@ -274,37 +275,36 @@ def make_sim2sim(multienv_cfg):
     coerce_traineval(multienv_cfg.train)
     coerce_traineval(multienv_cfg.eval)
 
-    train_env = make_multiplex(multienv_cfg.train)
+    train_env = make_multiplex(multienv_cfg.train, seed)
 
     many_eval_env = []
-    for sliced_multiplex in splat_multiplex(multienv_cfg.eval):
-        many_eval_env += [make_multiplex(sliced_multiplex)]
+    for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
+        sliced_multiplex = monad_multiplex(sliced_multiplex)
+        many_eval_env += [make_multiplex(sliced_multiplex, seed+i+1)]
 
-    DO_EVAL = False
+        assert many_eval_env[-1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
+        assert many_eval_env[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
 
-    if DO_EVAL:
-        eval_envs = [
-            eval_wdr_atstart(),
-            eval_wdr_every200()
-        ]
+    EVAL_FREQ = multienv_cfg.eval_freq
+    if EVAL_FREQ:
+        eval_envs = many_eval_env
     else:
         eval_envs = []
 
-    if DO_EVAL:
-        video_envs = [
-            eval_wdr_every200()
-        ]
+    VIDEO_FREQ = multienv_cfg.video_freq
+    if VIDEO_FREQ:
+        video_envs = many_eval_env
     else:
         video_envs = []
 
     hook_steps = []
     hooks = []
     for _env in video_envs:
-        hook_steps.append(25_000_000)
-        hooks.append(functools.partial(record, video_envs=_env, RUN_DIR=rundir()))
+        hook_steps.append(VIDEO_FREQ)
+        hooks.append(functools.partial(record, video_envs=_env, RUN_DIR=save_path, NUM_STEPS=multienv_cfg.num_video_steps))
     for _env in eval_envs:
-        hook_steps.append(5_000_000)
-        hooks.append(functools.partial(evaluate, eval_envs=_env))
+        hook_steps.append(EVAL_FREQ)
+        hooks.append(functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps))
     all_hooks = EveryN2(hook_steps, hooks)
 
     return train_env, all_hooks

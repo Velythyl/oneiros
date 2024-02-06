@@ -21,20 +21,20 @@ class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 256)),
+            layer_init(nn.Linear(np.array(envs.ONEIROS_METADATA.single_observation_space).prod(), 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 256)),
+            layer_init(nn.Linear(np.array(envs.ONEIROS_METADATA.single_observation_space).prod(), 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
-            layer_init(nn.Linear(256, np.prod(envs.single_action_space.shape)), std=0.01),
+            layer_init(nn.Linear(256, np.prod(envs.ONEIROS_METADATA.single_action_space)), std=0.01),
         )
-        self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
+        self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.ONEIROS_METADATA.single_action_space)))
 
     def get_value(self, x):
         return self.critic(x)
@@ -91,8 +91,8 @@ class PPO(_Alg):
         batch_size = int(self.num_envs * self.num_steps)
         minibatch_size = max(int(batch_size // self.num_minibatches), int(batch_size //2))
 
-        obs = torch.zeros((self.num_steps, self.num_envs) + envs.single_observation_space.shape, dtype=torch.float).to(device)
-        actions = torch.zeros((self.num_steps, self.num_envs) + envs.single_action_space.shape, dtype=torch.float).to(device)
+        obs = torch.zeros((self.num_steps, self.num_envs) + envs.ONEIROS_METADATA.single_observation_space, dtype=torch.float).to(device)
+        actions = torch.zeros((self.num_steps, self.num_envs) + envs.ONEIROS_METADATA.single_action_space, dtype=torch.float).to(device)
         logprobs = torch.zeros((self.num_steps, self.num_envs), dtype=torch.float).to(device)
         rewards = torch.zeros((self.num_steps, self.num_envs), dtype=torch.float).to(device)
         dones = torch.zeros((self.num_steps, self.num_envs), dtype=torch.float).to(device)
@@ -154,9 +154,9 @@ class PPO(_Alg):
                 returns = advantages + values
 
             # flatten the batch
-            b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+            b_obs = obs.reshape((-1,) + envs.ONEIROS_METADATA.single_observation_space)
             b_logprobs = logprobs.reshape(-1)
-            b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
+            b_actions = actions.reshape((-1,) + envs.ONEIROS_METADATA.single_action_space)
             b_advantages = advantages.reshape(-1)
             b_returns = returns.reshape(-1)
             b_values = values.reshape(-1)

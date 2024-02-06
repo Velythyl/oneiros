@@ -12,14 +12,16 @@ class MultiPlexEnv(Wrapper):
         self.device = device
         self.num_envs_per_env = env_list[0].observation_space.shape[0]
 
-        obs_space_shape = (self.num_envs_per_env * len(env_list), self.observation_space.shape[-1])
-        self.observation_space = gym.spaces.Box(low=np.ones(obs_space_shape) * -np.inf, high=np.ones(obs_space_shape)*np.inf)
+        obs_space_shape = (self.num_envs_per_env * len(env_list), *self.observation_space.shape[1:])
+        self.observation_space = gym.spaces.Box(low=np.ones(obs_space_shape) * -np.inf, high=np.ones(obs_space_shape) * np.inf)
+        act_space_shape = (self.num_envs_per_env * len(env_list), *self.action_space.shape[1:])
+        self.action_space = gym.spaces.Box(low=np.ones(act_space_shape) * -np.inf, high=np.ones(act_space_shape) * np.inf)
+
         self.num_envs = self.num_envs_per_env * self.env_list_len
 
         self.env_map_to_name = []
         for env in self.env_list:
-            env = env.unwrapped
-            self.env_map_to_name.append(env.spec.id.split("_")[-1])
+            self.env_map_to_name.append(env.ONEIROS_METADATA.env_key)
 
     def reset(self):
         obs_s = []

@@ -43,26 +43,14 @@ class TinyLogger:
             self._add(key, val)
 
     def info(self, done, info, global_step):
-        if done.any():
-            episodic_return = info['train#r'][done.bool()].cpu().numpy()
-            episodic_length = info['train#l'][done.bool()].float().cpu().numpy()
-            self._add("perf/ep_r", episodic_return)
-            self._add("perf/ep_l", episodic_length)
-            episodic_return = episodic_return.mean()
-            episodic_length = episodic_length.mean()
-            print(
-                f"global_step={global_step}, episodic_return={episodic_return}, episodic_length={episodic_length}")
-
         for key, val in info.items():
-            if "#" in key:
-                prefix, key = key.split("#")
-                out_key = f"{prefix.upper()}_{key}"
-            else:
-                prefix = ""
-                out_key = key
+            if key.endswith("#rew"):
+                key = key.replace("#", "/")
 
-            if key.startswith(f"mbrma/"):
-                self._add(out_key, val)
+            if "/" in key:
+                if "#" in key:
+                    key = key.replace("#", "")
+                self._add(key, val)
 
     def output(self):
         dico = {}

@@ -1,6 +1,6 @@
 env_key: braxgeneralized-halfcheetah
 
-device: gpu
+device: cuda
 num_env: 10
 max_episode_length: 1000
 action_repeat: 1  # todo

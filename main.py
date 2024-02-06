@@ -11,12 +11,7 @@ import numpy as np
 import torch
 from omegaconf import omegaconf
 
-from environments.wrappers.rundir import rundir
-from src.algs.path_ppo import Path_PPO
 from src.algs.ppo import PPO
-from src.algs.sac import SAC
-from src.offline_rl import TD3_BC
-from src.utils.offline_rl_data import get_dataset
 
 logging.basicConfig(level=logging.INFO)
 
@@ -49,7 +44,7 @@ def main(cfg):
         config=omegaconf.OmegaConf.to_container(
             cfg, resolve=True, throw_on_missing=True
         ),
-       mode="disabled"
+      # mode="disabled"
     )
 
     device = cfg.multienv.device
@@ -64,20 +59,19 @@ def main(cfg):
     # torch.backends.cudnn.deterministic = True # Potential Variable
 
     from environments.make_env import make_sim2sim
-    train_envs, all_hooks = make_sim2sim(cfg.multienv)
+    train_envs, all_hooks = make_sim2sim(cfg.multienv, seed, get_save_path())
 
     logging.info("==========Begin trainning the Agent==========")
 
-    agent = PPO(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.train))
+    agent = PPO(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
 
     agent.train()
 
-    save_path = get_save_path()
-    model_save_path = os.path.join(save_path, 'model.pkl')
+    model_save_path = os.path.join(get_save_path(), 'model.pkl')
 
     logging.info(f"==========Saving model to {model_save_path}==========")
     if cfg.train.alg == "ppo":
-        torch.save(agent.agent.state_dict(), rundir() + "/saved_agent.pth")
+        torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
     wandb.finish()

@@ -8,6 +8,8 @@ __pycache__/
 
 
 # Distribution / packaging
+wandb
+wandb/*
 .Python
 build/
 develop-eggs/
@@ -159,3 +161,4 @@ cython_debug/
 #.idea/
 !/config/multienv/env/braxpositional-halfcheetah.yaml
 !/config/multienv/env/
+!/wandb/

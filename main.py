@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from omegaconf import omegaconf
 
+from environments.config_utils import envkey_runname_multienv
 from src.algs.ppo import PPO
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +34,8 @@ def main(cfg):
 
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".30"
 
-    RUN_NAME = "TEMP "#  cfg.sim2sim.sim2sim_name
+
+    RUN_NAME = envkey_runname_multienv(cfg.multienv)
 
     run = wandb.init(
         # entity=cfg.wandb.entity,

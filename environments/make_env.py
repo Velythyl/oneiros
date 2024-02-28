@@ -1,12 +1,14 @@
-import copy
 import functools
 from typing import Any, Tuple
 
 from flax import struct
-import gym
 import brax
 from brax.envs.wrappers.torch import TorchWrapper
 
+from environments.config_utils import envkey_multiplex, num_multiplex, slice_multiplex, monad_multiplex, \
+    splat_multiplex, marshall_multienv_cfg, cfg_envkey_startswith
+from environments.env_binding import get_envstack, traverse_envstack, bind
+from environments.func_utils import monad_coerce
 from environments.wrappers.infologwrap import InfoLogWrap
 from environments.wrappers.jax_wrappers.gym import VectorGymWrapper
 from environments.wrappers.multiplex import MultiPlexEnv
@@ -17,107 +19,40 @@ from src.utils.every_n import EveryN2
 from src.utils.record import record
 
 
-# from environments.our_brax import our_brax_loader
-# from environments.our_brax.our_brax_loader import register_environment
-
-def get_envstack(_env, aslist=False):
-    def iter(env):
-        def get_next():
-            if hasattr(env, "env"):
-                return env.env
-            if hasattr(env, "_env"):
-                return env._env
-            return None
-
-        if not get_next():
-            return
-        yield get_next()
-        yield from iter(get_next())
-
-    if aslist:
-        return list(iter(_env))
-    else:
-        return iter(_env)
-
-
-def traverse_envstack(env, funcs):
-    for e in get_envstack(env):
-        for func in funcs:
-            func(e)
-
-
-def bind(e, method):
-    # PLEASE only use this with envs or wrappers
-    # This is a terrible code practice, but doing
-    # "proper, clean" code would require changing
-    # about a billion 3rd party dependencies...
-    # especially since the whole goal of this lib
-    # is to handle a bunch of different
-    # simulators
-    method_name = method.__name__
-    assert not hasattr(e, method_name)
-    setattr(e, method.__name__, functools.partial(method, e))
-
-
-@struct.dataclass
-class MakeEnv_Input:
-    env_key: str
-    num_env: int
-    max_episode_length: int
-    action_repeat: int
-    framestack: int
-    device: str
-
-    def build(self, env_key, num_env, sim2sim_cfg):
-        return MakeEnv_Input(
-            env_key=env_key,
-            num_env=num_env,
-            max_episode_length=sim2sim_cfg.max_episode_length,
-            action_repeat=sim2sim_cfg.action_repeat,
-            framestack=sim2sim_cfg.action_repeat,
-            device=sim2sim_cfg.device
-        )
-
-
-def make_env(env_cfg):
-    pass
-
-
-def startswith(cfg, name):
-    return cfg.env_key.startswith(name)
-
-
-def monad(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        return [f(*args, **kwds)]
-
-    return wrapper
-
-
-@monad
+@monad_coerce
 def make_brax(brax_cfg):
-    if not startswith(brax_cfg, "brax"):
+    if not cfg_envkey_startswith(brax_cfg, "brax"):
         return None
 
     BACKEND = envkey_multiplex(brax_cfg).split("-")[0].replace("brax", "")
     ENVNAME = envkey_multiplex(brax_cfg).split("-")[1]
 
     env = brax.envs.create(env_name=ENVNAME, episode_length=brax_cfg.max_episode_length, backend=BACKEND,
-                           batch_size=brax_cfg.num_env)
+                           batch_size=brax_cfg.num_env) # EP LEN, NUM_ENV
     env = VectorGymWrapper(env, seed=0)  # todo
     env = TorchWrapper(env, device=brax_cfg.device)
 
     return env
 
 
-@monad
+@monad_coerce
 def make_mujoco(mujoco_cfg):
-    if not startswith(mujoco_cfg, "mujoco"):
+    if not cfg_envkey_startswith(mujoco_cfg, "mujoco"):
         return None
 
+    import gymnasium.wrappers as gym_wrap
+    import gymnasium
+
+    ENVNAME = envkey_multiplex(mujoco_cfg).split("-")[-1]
+
+    env = gymnasium.make(ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+    env = gym_wrap.StepAPICompatibility(env, output_truncation_bool=False)
+
+
+
+
 @struct.dataclass
-class EnvMetaData:
+class ONEIROS_METADATA:
     cfg: Any
 
     single_action_space: Tuple
@@ -155,7 +90,7 @@ def make_multiplex(multiplex_env_cfg, seed):
     PROTO_NUM_ENV = num_envs(base_envs[0])
 
     def metadata_maker(cfg, num_env):
-        return EnvMetaData(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS))
+        return ONEIROS_METADATA(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS))
 
     for i, env in enumerate(base_envs):
         env = RenderWrap(env)
@@ -170,7 +105,7 @@ def make_multiplex(multiplex_env_cfg, seed):
             e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), PROTO_NUM_ENV)
             bind(e, traverse_envstack)
             bind(e, get_envstack)
-        traverse_envstack(env, [assigns])
+        traverse_envstack(env, assigns)
         base_envs[i] = env
 
     env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0])
@@ -182,98 +117,8 @@ def make_multiplex(multiplex_env_cfg, seed):
     return env
 
 
-def envkey_multiplex(multiplex_cfg):
-    return multiplex_cfg.env_key
-
-
-def num_multiplex(multiplex_cfg):
-    return len(multiplex_cfg.env_key)
-
-
-def keys_multiplex(mutiplex_cfg):
-    return vars(mutiplex_cfg)["_content"].keys()
-
-
-def slice_multiplex(multiplex_cfg, index):
-    EVAL_CONFIG = copy.deepcopy(multiplex_cfg)
-
-    for k in keys_multiplex(multiplex_cfg):
-        EVAL_CONFIG[k] = multiplex_cfg[k][index]
-
-    return EVAL_CONFIG
-
-def monad_multiplex(multiplex_cfg):
-    EVAL_CONFIG = copy.deepcopy(multiplex_cfg)
-    for k in keys_multiplex(multiplex_cfg):
-        EVAL_CONFIG[k] = [multiplex_cfg[k]]
-    return EVAL_CONFIG
-
-
-def splat_multiplex(multiplex_cfg):
-    ret = []
-    for i in range(num_multiplex(multiplex_cfg)):
-        ret += [slice_multiplex(multiplex_cfg, i)]
-    return ret
-
-
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
-    for key in ["num_env", "max_episode_length", "action_repeat", "framestack"]:
-        if multienv_cfg[key] not in ["None", None]:
-            multienv_cfg.train[key] = multienv_cfg[key]
-            multienv_cfg.eval[key] = multienv_cfg[key]
-
-    def coerce_traineval(train_or_eval_cfg):
-
-        def coerce_possible_list(key):
-            val = train_or_eval_cfg[key]
-
-            if isinstance(val, str):
-                if "," in val:
-                    val = val.split(",")
-                    val = list(map(lambda x: x.strip(), val))
-                else:
-                    val = [val]
-            elif isinstance(val, int):
-                val = [val]
-
-            VALID = True
-            for x in val:
-                if isinstance(x, str) or isinstance(x, int):
-                    continue
-                else:
-                    VALID = False
-                    break
-
-            if not VALID:
-                raise ValueError(f"Input is wrong for key {key}")
-
-            train_or_eval_cfg[key] = val
-
-        counts = {}
-        for key in vars(train_or_eval_cfg)["_content"].keys():
-            coerce_possible_list(key)
-            counts[key] = len(train_or_eval_cfg[key])
-
-        if num_multiplex(train_or_eval_cfg) == 1:
-            for key, c in counts.items():
-                if c != 1:
-                    raise ValueError("When there's only one env in multienv, all other params must also be of len 1")
-        else:
-            NUM_MULTIENV = num_multiplex(train_or_eval_cfg)
-            assert NUM_MULTIENV > 1
-
-            for key, count in counts.items():
-                if key == "env_key":
-                    continue
-
-                if count == NUM_MULTIENV:
-                    continue
-
-                assert count == 1
-                train_or_eval_cfg[key] = [*train_or_eval_cfg[key]] * NUM_MULTIENV
-
-    coerce_traineval(multienv_cfg.train)
-    coerce_traineval(multienv_cfg.eval)
+    multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
     train_env = make_multiplex(multienv_cfg.train, seed)
 

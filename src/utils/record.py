@@ -12,19 +12,14 @@ def record(nsteps, video_envs, agent, RUN_DIR, NUM_STEPS):
     next_obs = video_envs.reset()
     frame_list = []
 
-    def render():
-        x = video_envs.render()
-        return x
-
     # collect frames
-    x = render()
-    for _ in tqdm(range(0, NUM_STEPS)): # todo this should match the max ep len , something like (max_ep_len // 2 -1 )
+    x = video_envs.render()[0]  # we're dealing with a MultiPlexEnv with 1 sub-env
+    for _ in tqdm(range(0, NUM_STEPS)):
         with torch.no_grad():
             action = agent.get_action(next_obs)
         frame_list.append(x)
         next_obs, _, done, info = video_envs.step(action)
-        # print(done.any())
-        x = video_envs.render()
+        x = video_envs.render()[0]
 
     FPS = 30
     import cv2

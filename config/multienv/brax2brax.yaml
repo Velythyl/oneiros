@@ -11,7 +11,7 @@ max_episode_length: None
 action_repeat: None
 framestack: None
 
-eval_freq: 1000
+eval_freq: 10000000
 num_eval_steps: 500
-video_freq: 2000
-num_video_steps: 1000
+video_freq: 20000000
+num_video_steps: 100

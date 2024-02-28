@@ -1,0 +1,373 @@
+<?xml version="1.0" ?>
+<robot name="converted_robot">
+   <compiler angle="degree" coordinate="local" inertiafromgeom="true"/>
+   <custom>
+    <!-- brax custom params -->
+    <numeric data="0.0 0.0 0.55 1.0 0.0 0.0 0.0 0.0 1.0 0.0 -1.0 0.0 -1.0 0.0 1.0" name="init_qpos"/>
+    <numeric data="1000" name="constraint_limit_stiffness"/>
+    <numeric data="4000" name="constraint_stiffness"/>
+    <numeric data="10" name="constraint_ang_damping"/>
+    <numeric data="20" name="constraint_vel_damping"/>
+    <numeric data="0.5" name="joint_scale_pos"/>
+    <numeric data="0.2" name="joint_scale_ang"/>
+    <numeric data="0.0" name="ang_damping"/>
+    <numeric data="1" name="spring_mass_scale"/>
+    <numeric data="1" name="spring_inertia_scale"/>
+    <numeric data="15" name="solver_maxls"/>
+  </custom>
+   <link name="world">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.0"/>
+         <inertia ixx="0.0" iyy="0.0" izz="0.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="Cube.003">
+         <origin xyz="-5.3354986735320336e-11 -0.03477013052754224 -0.008037632612040562" rpy="3.141592653589793 -1.5683570970889658 -1.5707963267948966"/>
+         <geometry>
+            <mesh filename="converted_Cube.003.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+   <link name="leftFrontLeg">
+      <inertial>
+         <origin xyz="0.0139 0.0254 0.0" rpy="1.5707963267948966 0.0 1.5707963267948966"/>
+         <mass value="0.106"/>
+         <inertia ixx="6e-05" iyy="6e-05" izz="2e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftFrontLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftFrontLegMotor">
+      <parent link="world"/>
+      <child link="leftFrontLegMotor"/>
+      <origin xyz="0.047 -0.1015 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 -1.0 0.0"/>
+      <limit lower="-0.7854" upper="0.7854" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftFrontLegMotor_offset">
+      <parent link="leftFrontLegMotor"/>
+      <child link="leftFrontLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="leftFrontUpperLeg">
+      <inertial>
+         <origin xyz="0.0172 0.0 -0.061" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.142"/>
+         <inertia ixx="0.00016" iyy="0.00014" izz="3e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftFrontUpperLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftFrontUpperLegMotor">
+      <parent link="leftFrontLeg"/>
+      <child link="leftFrontUpperLegMotor"/>
+      <origin xyz="0.0395 0.0265 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-1.309" upper="4.45059" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftFrontUpperLegMotor_offset">
+      <parent link="leftFrontUpperLegMotor"/>
+      <child link="leftFrontUpperLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="leftFrontLowerLeg">
+      <inertial>
+         <origin xyz="0.0055706036745406815 -0.0007480314960629921 -0.06591601049868766" rpy="0.00010065746853249458 -5.015321491441682e-12 1.364285737885965"/>
+         <mass value="0.0381"/>
+         <inertia ixx="0.0002001961856120736" iyy="0.00020019485285666577" izz="4.0001332755407706e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftFrontLowerLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftFrontLowerLegMotor">
+      <parent link="leftFrontUpperLeg"/>
+      <child link="leftFrontLowerLegMotor"/>
+      <origin xyz="-0.004 0.0 -0.08" rpy="0.0 0.0 3.14159"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-2.87979" upper="2.87979" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftFrontLowerLegMotor_offset">
+      <parent link="leftFrontLowerLegMotor"/>
+      <child link="leftFrontLowerLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="leftRearLeg">
+      <inertial>
+         <origin xyz="0.0139 0.0254 0.0" rpy="1.5707963267948966 0.0 1.5707963267948966"/>
+         <mass value="0.106"/>
+         <inertia ixx="6e-05" iyy="6e-05" izz="2e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftRearLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftRearLegMotor">
+      <parent link="world"/>
+      <child link="leftRearLegMotor"/>
+      <origin xyz="0.047 0.0985 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 -1.0 0.0"/>
+      <limit lower="-0.7854" upper="0.7854" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftRearLegMotor_offset">
+      <parent link="leftRearLegMotor"/>
+      <child link="leftRearLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="leftRearUpperLeg">
+      <inertial>
+         <origin xyz="0.0172 0.0 -0.061" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.142"/>
+         <inertia ixx="0.00016" iyy="0.00014" izz="3e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftRearUpperLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftRearUpperLegMotor">
+      <parent link="leftRearLeg"/>
+      <child link="leftRearUpperLegMotor"/>
+      <origin xyz="0.0395 0.0265 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-1.309" upper="4.45059" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftRearUpperLegMotor_offset">
+      <parent link="leftRearUpperLegMotor"/>
+      <child link="leftRearUpperLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="leftRearLowerLeg">
+      <inertial>
+         <origin xyz="0.0055706036745406815 -0.0007480314960629921 -0.06591601049868766" rpy="0.00010065746853249458 -5.015321491441682e-12 1.364285737885965"/>
+         <mass value="0.0381"/>
+         <inertia ixx="0.0002001961856120736" iyy="0.00020019485285666577" izz="4.0001332755407706e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="leftRearLowerLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="leftRearLowerLegMotor">
+      <parent link="leftRearUpperLeg"/>
+      <child link="leftRearLowerLegMotor"/>
+      <origin xyz="-0.004 0.0 -0.08" rpy="0.0 0.0 3.14159"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-2.87979" upper="2.87979" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="leftRearLowerLegMotor_offset">
+      <parent link="leftRearLowerLegMotor"/>
+      <child link="leftRearLowerLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightFrontLeg">
+      <inertial>
+         <origin xyz="0.0139 -0.0269 0.0" rpy="1.5707963267948966 0.0 1.5707963267948966"/>
+         <mass value="0.106"/>
+         <inertia ixx="6e-05" iyy="6e-05" izz="2e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightFrontLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightFrontLegMotor">
+      <parent link="world"/>
+      <child link="rightFrontLegMotor"/>
+      <origin xyz="-0.047 -0.103 0.0" rpy="0.0 0.0 -3.1415899999999994"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-0.7854" upper="0.7854" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightFrontLegMotor_offset">
+      <parent link="rightFrontLegMotor"/>
+      <child link="rightFrontLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightFrontUpperLeg">
+      <inertial>
+         <origin xyz="0.0172 0.0 -0.061" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.142"/>
+         <inertia ixx="0.00016" iyy="0.00014" izz="3e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightFrontUpperLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightFrontUpperLegMotor">
+      <parent link="rightFrontLeg"/>
+      <child link="rightFrontUpperLegMotor"/>
+      <origin xyz="0.0395 -0.028 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-1.309" upper="4.45059" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightFrontUpperLegMotor_offset">
+      <parent link="rightFrontUpperLegMotor"/>
+      <child link="rightFrontUpperLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightFrontLowerLeg">
+      <inertial>
+         <origin xyz="-0.005869816272965879 -0.0007480314960629921 -0.06591601049868766" rpy="-0.00010875114091879468 -8.496314762851398e-12 1.7617403632495885"/>
+         <mass value="0.0381"/>
+         <inertia ixx="0.00020019640882467198" iyy="0.0002001948531281729" izz="4.000155569649906e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightFrontLowerLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightFrontLowerLegMotor">
+      <parent link="rightFrontUpperLeg"/>
+      <child link="rightFrontLowerLegMotor"/>
+      <origin xyz="-0.004 0.0 -0.08" rpy="0.0 0.0 0.0"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-2.87979" upper="2.87979" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightFrontLowerLegMotor_offset">
+      <parent link="rightFrontLowerLegMotor"/>
+      <child link="rightFrontLowerLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightRearLeg">
+      <inertial>
+         <origin xyz="0.0139 -0.0269 0.0" rpy="1.5707963267948966 0.0 1.5707963267948966"/>
+         <mass value="0.106"/>
+         <inertia ixx="6e-05" iyy="6e-05" izz="2e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightRearLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightRearLegMotor">
+      <parent link="world"/>
+      <child link="rightRearLegMotor"/>
+      <origin xyz="-0.047 0.097 0.0" rpy="0.0 0.0 -3.1415899999999994"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-0.7854" upper="0.7854" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightRearLegMotor_offset">
+      <parent link="rightRearLegMotor"/>
+      <child link="rightRearLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightRearUpperLeg">
+      <inertial>
+         <origin xyz="0.0172 0.0 -0.061" rpy="0.0 0.0 1.5707963267948963"/>
+         <mass value="0.142"/>
+         <inertia ixx="0.00016" iyy="0.00014" izz="3e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightRearUpperLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightRearUpperLegMotor">
+      <parent link="rightRearLeg"/>
+      <child link="rightRearUpperLegMotor"/>
+      <origin xyz="0.0395 -0.028 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-1.309" upper="4.45059" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightRearUpperLegMotor_offset">
+      <parent link="rightRearUpperLegMotor"/>
+      <child link="rightRearUpperLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <link name="rightRearLowerLeg">
+      <inertial>
+         <origin xyz="-0.005869816272965879 -0.0007480314960629921 -0.06591601049868766" rpy="-0.00010875114091879468 -8.496314762851398e-12 1.7617403632495885"/>
+         <mass value="0.0381"/>
+         <inertia ixx="0.00020019640882467198" iyy="0.0002001948531281729" izz="4.000155569649906e-05" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <link name="rightRearLowerLegMotor">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.001"/>
+         <inertia ixx="1e-09" iyy="1e-09" izz="1e-09" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+   </link>
+   <joint type="revolute" name="rightRearLowerLegMotor">
+      <parent link="rightRearUpperLeg"/>
+      <child link="rightRearLowerLegMotor"/>
+      <origin xyz="-0.004 0.0 -0.08" rpy="0.0 0.0 0.0"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-2.87979" upper="2.87979" effort="100" velocity="100"/>
+   </joint>
+   <joint type="fixed" name="rightRearLowerLegMotor_offset">
+      <parent link="rightRearLowerLegMotor"/>
+      <child link="rightRearLowerLeg"/>
+      <origin xyz="-0.0 -0.0 -0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+   <material name="white">
+      <color rgba="1 1 1 1"/>
+   </material>
+
+   <actuator>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftFrontLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftFrontLowerLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftFrontUpperLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftRearLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftRearLowerLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="leftRearUpperLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightFrontLegMotor" gear="150"/>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightFrontLowerLegMotor" gear="150"/>
+
+
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightFrontUpperLegMotor" gear="150"/>
+
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightRearLegMotor" gear="150"/>
+
+
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightRearLowerLegMotor" gear="150"/>
+
+
+
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="rightRearUpperLegMotor" gear="150"/>
+
+
+  </actuator>
+
+</robot>

@@ -10,3 +10,4 @@ wandb
 hydra-core
 seaborn
 plotly
+gymnasium

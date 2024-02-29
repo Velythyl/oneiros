@@ -6,6 +6,7 @@ defaults:
 
 device: cuda # falls back to cpu if needed no matter what
 
+do_powerset: True
 num_env: None
 max_episode_length: None
 action_repeat: None

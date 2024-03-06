@@ -8,7 +8,7 @@ python3 -m venv venv
 pip install --upgrade pip
 
 # IF YOU WANT TO ENABLE GPU FOR BRAX
-pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # IF YOU ARE OK WITH CPU-ONLY BRAX
 pip install --upgrade "jax[cpu]"

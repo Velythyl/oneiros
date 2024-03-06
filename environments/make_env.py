@@ -131,13 +131,13 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         assert many_eval_env[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
 
     EVAL_FREQ = multienv_cfg.eval_freq
-    if EVAL_FREQ:
+    if EVAL_FREQ and EVAL_FREQ != "None":
         eval_envs = many_eval_env
     else:
         eval_envs = []
 
     VIDEO_FREQ = multienv_cfg.video_freq
-    if VIDEO_FREQ:
+    if VIDEO_FREQ and VIDEO_FREQ != "None":
         video_envs = many_eval_env
     else:
         video_envs = []

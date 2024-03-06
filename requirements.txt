@@ -12,5 +12,5 @@ seaborn
 plotly
 gymnasium
 git+https://github.com/Velythyl/brax.git@vsys
-mujoco==2.3.5
-mujoco-mjx==3.0.0
+mujoco
+mujoco-mjx

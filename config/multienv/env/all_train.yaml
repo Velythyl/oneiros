@@ -1,7 +1,7 @@
 env_key:
-  #- braxgeneralized-halfcheetah
-  #- braxpositional-halfcheetah
-  #- braxspring-halfcheetah
+  - braxgeneralized-halfcheetah
+  - braxpositional-halfcheetah
+  - braxspring-halfcheetah
   - braxmjx-halfcheetah
 
 device: cuda

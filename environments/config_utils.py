@@ -1,5 +1,6 @@
 import copy
 
+from omegaconf import omegaconf
 
 
 def envkey_runname_multienv(multienv_cfg):
@@ -43,6 +44,53 @@ def splat_multiplex(multiplex_cfg):
     for i in range(num_multiplex(multiplex_cfg)):
         ret += [slice_multiplex(multiplex_cfg, i)]
     return ret
+
+def make_powerset_cfgs(full_cfg):
+    from itertools import chain, combinations
+
+    def powerset(iterable):
+        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+        s = list(iterable)
+        return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+    envs_to_powerset = marshall_multienv_cfg(full_cfg.multienv).train
+    assert len(envs_to_powerset.env_key) > 1
+
+    pw_ind = powerset(list(range(len(envs_to_powerset.env_key))))
+    pw_ind = filter(lambda x: len(x) > 0, pw_ind)
+    pw_ind = list(pw_ind)
+
+    def left_out(ind):
+        MAX_ITEM = list(sorted(pw_ind, key=lambda x: len(x)))[-1]
+        ret = set(MAX_ITEM) - set(ind)
+        return tuple(ret)
+
+    envs_to_powerset = vars(envs_to_powerset)["_content"]
+
+    def collect_ind(ind):
+        new_train = {}
+
+        for key, val in envs_to_powerset.items():
+            acc = []
+            for i in ind:
+                acc.append(val[i])
+            new_train[key] = acc
+
+        new_train["powerset_metadata"] = ind
+        return new_train
+
+    LIST_OF_CFGS = []
+    for ind in pw_ind:
+        OG_CFG = vars(full_cfg)["_content"]
+
+        new_train = collect_ind(ind)
+        new_eval = collect_ind(left_out(ind))
+
+        OG_CFG["multienv"]["train"] = new_train
+        OG_CFG["multienv"]["eval"] = new_eval
+        new_cfg = omegaconf.OmegaConf.create(OG_CFG)
+        LIST_OF_CFGS.append(new_cfg)
+    return LIST_OF_CFGS
 
 
 def marshall_multienv_cfg(multienv_cfg):

@@ -69,8 +69,8 @@ def do_exp(cfg):
     model_save_path = os.path.join(get_save_path(), 'model.pkl')
 
     logging.info(f"==========Saving model to {model_save_path}==========")
-    if cfg.train.alg == "ppo":
-        torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
+    #if cfg.train.alg == "ppo":
+    torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
     wandb.finish()

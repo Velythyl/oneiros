@@ -54,6 +54,8 @@ def make_powerset_cfgs(full_cfg):
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
     envs_to_powerset = marshall_multienv_cfg(full_cfg.multienv).train
+    TOT_NUMBER_TRAIN_ENVS = sum(envs_to_powerset.num_env)
+
     assert len(envs_to_powerset.env_key) > 1
 
     pw_ind = powerset(list(range(len(envs_to_powerset.env_key))))
@@ -86,6 +88,7 @@ def make_powerset_cfgs(full_cfg):
         new_train = collect_ind(ind)
         new_eval = collect_ind(left_out(ind))
 
+        new_train["num_env"] = [TOT_NUMBER_TRAIN_ENVS // len(ind) for _ in new_train["num_env"]]
         OG_CFG["multienv"]["train"] = new_train
         OG_CFG["multienv"]["eval"] = new_eval
         new_cfg = omegaconf.OmegaConf.create(OG_CFG)

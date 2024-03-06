@@ -13,4 +13,4 @@ plotly
 gymnasium
 git+https://github.com/Velythyl/brax.git@vsys
 mujoco
-mujoco-mjx==3.0.0
+mujoco-mjx

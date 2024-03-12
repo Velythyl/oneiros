@@ -3,13 +3,28 @@ import copy
 from omegaconf import omegaconf
 
 
+
 def envkey_runname_multienv(multienv_cfg):
+    def envkey2shortkey(envkey):
+        envkey = envkey.split("-")[0]
+        return {
+            "braxpositional": "bpos",
+            "braxmjx": "bmujo",
+            "braxgeneralized": "bgen",
+            "braxspring": "bspring",
+        }[envkey]
+
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    train = "-".join(envkey_multiplex(multienv_cfg.train))
-    eval = "-".join(envkey_multiplex(multienv_cfg.eval))
+    train_envs = envkey_multiplex(multienv_cfg.train)
+    eval_envs = envkey_multiplex(multienv_cfg.eval)
 
-    return f"TRAIN_{train}_EVAL_{eval}"
+    envname = train_envs[0].split("-")[1]
+
+    train_envs = "-".join(list(map(envkey2shortkey, train_envs)))
+    eval_envs = "-".join(list(map(envkey2shortkey, eval_envs)))
+
+    return f"{envname}_TRAIN_{train_envs}_EVAL_{eval_envs}"
 
 def envkey_multiplex(multiplex_cfg):
     return multiplex_cfg.env_key
@@ -62,10 +77,14 @@ def make_powerset_cfgs(full_cfg):
     pw_ind = filter(lambda x: len(x) > 0, pw_ind)
     pw_ind = list(pw_ind)
 
+    MAX_IND = list(sorted(pw_ind, key=lambda x: len(x)))[-1]
+
     def left_out(ind):
-        MAX_ITEM = list(sorted(pw_ind, key=lambda x: len(x)))[-1]
-        ret = set(MAX_ITEM) - set(ind)
+        ret = set(MAX_IND) - set(ind)
         return tuple(ret)
+    
+    def myround(x, base=10):
+        return int(base * round(x/base))
 
     envs_to_powerset = vars(envs_to_powerset)["_content"]
 
@@ -86,9 +105,9 @@ def make_powerset_cfgs(full_cfg):
         OG_CFG = vars(full_cfg)["_content"]
 
         new_train = collect_ind(ind)
-        new_eval = collect_ind(left_out(ind))
+        new_eval = collect_ind(MAX_IND)
 
-        new_train["num_env"] = [TOT_NUMBER_TRAIN_ENVS // len(ind) for _ in new_train["num_env"]]
+        new_train["num_env"] = [myround(TOT_NUMBER_TRAIN_ENVS // len(ind)) for _ in new_train["num_env"]]
         OG_CFG["multienv"]["train"] = new_train
         OG_CFG["multienv"]["eval"] = new_eval
         new_cfg = omegaconf.OmegaConf.create(OG_CFG)

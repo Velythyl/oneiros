@@ -31,7 +31,7 @@ class Np2TorchWrapper(Wrapper):
     def step(self, action):
         action = torch2np(action)
         obs, rew, done, info = super(Np2TorchWrapper, self).step(action)
-        return np2torch(obs).to(self.device), np2torch(rew).to(self.device), np2torch(done).to(self.device), info #dict2torch(info, self.device)
+        return np2torch(obs).to(self.device), np2torch(rew).to(self.device), np2torch(done).to(self.device).int(), info #dict2torch(info, self.device)
 
 if __name__ == "__main__":
     np2torch

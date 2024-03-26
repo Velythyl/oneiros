@@ -145,8 +145,11 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
+    print("Building training envs...")
     train_env = make_multiplex(multienv_cfg.train, seed)
+    print("...done!")
 
+    print("Building eval envs...")
     many_eval_env = []
     for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
         sliced_multiplex = monad_multiplex(sliced_multiplex)
@@ -154,6 +157,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
 
         assert many_eval_env[-1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
         assert many_eval_env[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
+    print("...done!")
 
     EVAL_FREQ = multienv_cfg.eval_freq
     if EVAL_FREQ and EVAL_FREQ != "None":

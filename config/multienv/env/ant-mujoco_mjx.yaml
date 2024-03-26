@@ -6,7 +6,7 @@ env_key:
   - braxmjx-ant
 
 device: cuda
-num_env: 16
+num_env: 1000
 max_episode_length: 1000
 action_repeat: 1  # todo
 framestack: 1 # todo

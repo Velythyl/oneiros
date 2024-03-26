@@ -4,14 +4,40 @@ from omegaconf import omegaconf
 
 
 
+def envkey_tags_multienv(multienv_cfg):
+    def envkey2shortkey(envkey):
+        envkey = envkey.split("-")[0]
+        return {
+            "braxpositional": "bpos",
+            "braxmjx": "bmjx",
+            "braxgeneralized": "bgen",
+            "braxspring": "bspring",
+            "mujoco": "mujoco"
+        }[envkey]
+
+    multienv_cfg = marshall_multienv_cfg(multienv_cfg)
+
+    train_envs = envkey_multiplex(multienv_cfg.train)
+    eval_envs = envkey_multiplex(multienv_cfg.eval)
+
+    envname = train_envs[0].split("-")[1]
+
+    train_envs = list(map(envkey2shortkey, train_envs))
+    PREFIX_train_envs = list(map(lambda name: f"train-{name}", train_envs))
+    eval_envs = list(map(envkey2shortkey, eval_envs))
+    PREFIX_eval_envs = list(map(lambda name: f"eval-{name}", eval_envs))
+
+    return PREFIX_train_envs + PREFIX_eval_envs + [f"eval num = {len(eval_envs)}", f"train num = {len(train_envs)}", f"envname {envname}", f"TRAIN {'-'.join(train_envs)}", f"EVAL {'-'.join(eval_envs)}"]
+
 def envkey_runname_multienv(multienv_cfg):
     def envkey2shortkey(envkey):
         envkey = envkey.split("-")[0]
         return {
             "braxpositional": "bpos",
-            "braxmjx": "bmujo",
+            "braxmjx": "bmjx",
             "braxgeneralized": "bgen",
             "braxspring": "bspring",
+            "mujoco": "mujoco"
         }[envkey]
 
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)

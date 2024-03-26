@@ -240,5 +240,6 @@ class PPO(_Alg):
         ))
 
         wandb_logs["charts/sps"] = sps
+        wandb_logs["charts/global_step"] = global_step
         print("sps:", sps)
         return wandb_logs

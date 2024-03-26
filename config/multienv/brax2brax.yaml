@@ -1,8 +1,8 @@
 defaults:
   - env@train:
-    - all_train
+    - ant-mujoco_mjx
   - env@eval:
-    - bs-bp-halfcheetah
+    - ant-bs_bp
 
 device: cuda # falls back to cpu if needed no matter what
 

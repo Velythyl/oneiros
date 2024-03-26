@@ -11,7 +11,8 @@ import numpy as np
 import torch
 from omegaconf import omegaconf
 
-from environments.config_utils import envkey_runname_multienv, marshall_multienv_cfg, make_powerset_cfgs
+from environments.config_utils import envkey_runname_multienv, marshall_multienv_cfg, make_powerset_cfgs, \
+    envkey_tags_multienv
 from src.algs.ppo import PPO
 
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,7 @@ def do_exp(cfg):
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".30"
 
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
+    TAGS = envkey_tags_multienv(cfg.multienv)
 
     run = wandb.init(
         # entity=cfg.wandb.entity,
@@ -43,6 +45,7 @@ def do_exp(cfg):
         config=omegaconf.OmegaConf.to_container(
             cfg, resolve=True, throw_on_missing=True
         ),
+        tags=TAGS
         # mode="disabled"
     )
 

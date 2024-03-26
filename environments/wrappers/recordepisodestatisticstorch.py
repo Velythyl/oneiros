@@ -25,7 +25,7 @@ class RecordEpisodeStatisticsTorch(gym.Wrapper):
         observations, rewards, dones, infos = self.env.step(action)
 
         _rewards = rewards#.to('cpu')
-        _dones = dones#.to('cpu')
+        _dones = dones.int()#.to('cpu')
 
         self.episode_returns += _rewards
         self.episode_lengths += 1

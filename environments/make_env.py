@@ -2,8 +2,10 @@ import functools
 from typing import Any, Tuple
 
 from flax import struct
-import brax
-from brax.envs.wrappers.torch import TorchWrapper
+import brax # noqa
+from brax.envs.wrappers.torch import TorchWrapper   # noqa
+from gymnasium import Wrapper
+from gymnasium.vector import AsyncVectorEnv
 
 from environments.config_utils import envkey_multiplex, num_multiplex, slice_multiplex, monad_multiplex, \
     splat_multiplex, marshall_multienv_cfg, cfg_envkey_startswith
@@ -12,8 +14,10 @@ from environments.func_utils import monad_coerce
 from environments.wrappers.infologwrap import InfoLogWrap
 from environments.wrappers.jax_wrappers.gym import VectorGymWrapper
 from environments.wrappers.multiplex import MultiPlexEnv
+from environments.wrappers.np2torch import Np2TorchWrapper
 from environments.wrappers.recordepisodestatisticstorch import RecordEpisodeStatisticsTorch
 from environments.wrappers.renderwrap import RenderWrap
+from environments.wrappers.mappings.vector_index_rearrange import VectorIndexMapWrapper
 from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
@@ -32,6 +36,8 @@ def make_brax(brax_cfg):
     env = VectorGymWrapper(env, seed=0)  # todo
     env = TorchWrapper(env, device=brax_cfg.device)
 
+    print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
+
     return env
 
 
@@ -43,12 +49,31 @@ def make_mujoco(mujoco_cfg):
     import gymnasium.wrappers as gym_wrap
     import gymnasium
 
-    ENVNAME = envkey_multiplex(mujoco_cfg).split("-")[-1]
+    BRAX_ENVNAME = envkey_multiplex(mujoco_cfg).split("-")[-1]
 
-    env = gymnasium.make(ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+    MUJOCO_ENVNAME = {
+        "ant": "Ant-v4"
+    }[BRAX_ENVNAME]
+
+    def thunk():
+        env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+        env = VectorIndexMapWrapper(env, BRAX_ENVNAME)
+        return env
+
+    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)])
+
     env = gym_wrap.StepAPICompatibility(env, output_truncation_bool=False)
 
+    class NoResetInfoWrapper(Wrapper):
+        def reset(self, **kwargs):
+            return super(NoResetInfoWrapper, self).reset(**kwargs)[0]
 
+    env = NoResetInfoWrapper(env)
+    env = Np2TorchWrapper(env, mujoco_cfg.device)
+
+    print(f"Mujoco env built: {envkey_multiplex(mujoco_cfg)}")
+
+    return env
 
 
 @struct.dataclass

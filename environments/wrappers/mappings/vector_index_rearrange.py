@@ -138,7 +138,6 @@ class Ant(_Mapping):
 def map_func_lookup(mujoco_name: str) -> _Mapping:
     get_mapping_class = list(_Mapping.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
-    print(get_mapping_class)
     mapping_class = get_mapping_class[mujoco_name]
     mapping_class = mapping_class(mapping_class.obs, mapping_class.act)
 

@@ -188,6 +188,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
 
         print("Closing eval env...")
         for env in many_eval_env:
+            print(f"closing: {env.ONEIROS_METADATA.env_key}")
             env.close()
         print("...done!")
 

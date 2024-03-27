@@ -7,12 +7,15 @@ defaults:
 device: cuda # falls back to cpu if needed no matter what
 
 do_powerset: True # if true, eval will be disabled and taken as the left-outs for every set in the powerset of the train envs
+min_powerset_len: 2
+max_powerset_len: None
+
 num_env: None
 max_episode_length: None
 action_repeat: None
 framestack: None
 
 eval_freq: 10000000
-num_eval_steps: 500
+num_eval_steps: 1000
 video_freq: None
 num_video_steps: 100

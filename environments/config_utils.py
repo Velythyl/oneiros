@@ -1,7 +1,7 @@
 import copy
 
+import numpy as np
 from omegaconf import omegaconf
-
 
 
 def envkey_tags_multienv(multienv_cfg):
@@ -27,7 +27,10 @@ def envkey_tags_multienv(multienv_cfg):
     eval_envs = list(map(envkey2shortkey, eval_envs))
     PREFIX_eval_envs = list(map(lambda name: f"eval-{name}", eval_envs))
 
-    return PREFIX_train_envs + PREFIX_eval_envs + [f"eval num = {len(eval_envs)}", f"train num = {len(train_envs)}", f"envname {envname}", f"TRAIN {'-'.join(train_envs)}", f"EVAL {'-'.join(eval_envs)}"]
+    return PREFIX_train_envs + PREFIX_eval_envs + [f"eval num = {len(eval_envs)}", f"train num = {len(train_envs)}",
+                                                   f"envname {envname}", f"TRAIN {'-'.join(train_envs)}",
+                                                   f"EVAL {'-'.join(eval_envs)}"]
+
 
 def envkey_runname_multienv(multienv_cfg):
     def envkey2shortkey(envkey):
@@ -51,6 +54,7 @@ def envkey_runname_multienv(multienv_cfg):
     eval_envs = "-".join(list(map(envkey2shortkey, eval_envs)))
 
     return f"{envname}_TRAIN_{train_envs}_EVAL_{eval_envs}"
+
 
 def envkey_multiplex(multiplex_cfg):
     return multiplex_cfg.env_key
@@ -86,6 +90,7 @@ def splat_multiplex(multiplex_cfg):
         ret += [slice_multiplex(multiplex_cfg, i)]
     return ret
 
+
 def make_powerset_cfgs(full_cfg):
     from itertools import chain, combinations
 
@@ -103,14 +108,23 @@ def make_powerset_cfgs(full_cfg):
     pw_ind = filter(lambda x: len(x) > 0, pw_ind)
     pw_ind = list(pw_ind)
 
+    MIN_POWERSET_LEN = full_cfg.multienv.min_powerset_len
+    MAX_POWERSET_LEN = full_cfg.multienv.max_powerset_len
+
+    MIN_POWERSET_LEN = -np.inf if MIN_POWERSET_LEN == "-inf" or MIN_POWERSET_LEN == "None" else MIN_POWERSET_LEN
+    MAX_POWERSET_LEN = np.inf if MAX_POWERSET_LEN == "inf" or MAX_POWERSET_LEN == "None" else MAX_POWERSET_LEN
+
+    pw_ind = list(filter(lambda x: len(x) >= MIN_POWERSET_LEN, pw_ind))
+    pw_ind = list(filter(lambda x: len(x) <= MAX_POWERSET_LEN, pw_ind))
+
     MAX_IND = list(sorted(pw_ind, key=lambda x: len(x)))[-1]
 
     def left_out(ind):
         ret = set(MAX_IND) - set(ind)
         return tuple(ret)
-    
+
     def myround(x, base=10):
-        return int(base * round(x/base))
+        return int(base * round(x / base))
 
     envs_to_powerset = vars(envs_to_powerset)["_content"]
 

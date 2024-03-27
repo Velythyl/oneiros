@@ -1,12 +1,12 @@
 defaults:
   - env@train:
-    - ant-mujoco_mjx
+      - ant-gen
   - env@eval:
-    - ant-bs_bp
+    - ant-mujoco_mjx
 
 device: cuda # falls back to cpu if needed no matter what
 
-do_powerset: True # if true, eval will be disabled and taken as the left-outs for every set in the powerset of the train envs
+do_powerset: False # if true, eval will be disabled and taken as the left-outs for every set in the powerset of the train envs
 num_env: None
 max_episode_length: None
 action_repeat: None

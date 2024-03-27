@@ -23,6 +23,10 @@ class MultiPlexEnv(Wrapper):
         for env in self.env_list:
             self.env_map_to_name.append(env.ONEIROS_METADATA.env_key)
 
+    def close(self):
+        for env in self.env_list:
+            env.close()
+
     def reset(self):
         obs_s = []
         for env in self.env_list:

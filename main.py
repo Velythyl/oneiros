@@ -61,13 +61,15 @@ def do_exp(cfg):
     # torch.backends.cudnn.deterministic = True # Potential Variable
 
     from environments.make_env import make_sim2sim
-    train_envs, all_hooks = make_sim2sim(cfg.multienv, seed, get_save_path())
+    train_envs, all_hooks, close_all_envs = make_sim2sim(cfg.multienv, seed, get_save_path())
 
     logging.info("==========Begin trainning the Agent==========")
 
     agent = PPO(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
 
     agent.train()
+
+    close_all_envs()
 
     model_save_path = os.path.join(get_save_path(), 'model.pkl')
 
@@ -79,6 +81,7 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
     wandb.finish()
+
 
 
 @hydra.main(version_base=None, config_path="config", config_name="conf")

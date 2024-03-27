@@ -181,4 +181,9 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         hooks.append(functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps))
     all_hooks = EveryN2(hook_steps, hooks)
 
-    return train_env, all_hooks
+    def close_all_envs():
+        train_env.close()
+        for env in many_eval_env:
+            env.close()
+
+    return train_env, all_hooks, close_all_envs

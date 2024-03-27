@@ -182,8 +182,13 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     all_hooks = EveryN2(hook_steps, hooks)
 
     def close_all_envs():
+        print("Closing train env...")
         train_env.close()
+        print("...done!")
+
+        print("Closing eval env...")
         for env in many_eval_env:
             env.close()
+        print("...done!")
 
     return train_env, all_hooks, close_all_envs

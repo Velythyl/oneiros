@@ -88,7 +88,7 @@ def do_exp(cfg):
     sleep(5)
 
     # the strongest choices require the strongest will
-    import subprocess, os
+    import subprocess
     pid = os.getpid()
     command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
     process = subprocess.Popen(command, shell=True)

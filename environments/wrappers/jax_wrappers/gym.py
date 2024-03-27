@@ -158,4 +158,7 @@ class VectorGymWrapper(gym.vector.VectorEnv):
         else:
             return super().render(mode=mode)  # just raise an exception
 
+    def close(self):
+        return
+
 

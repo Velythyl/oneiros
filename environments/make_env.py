@@ -57,7 +57,7 @@ def make_mujoco(mujoco_cfg):
 
     def thunk():
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
-        env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, MUJOCO_ENVNAME))
+        env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         return env
 
     env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)])

@@ -6,6 +6,8 @@ import os
 import random
 
 # import gym
+from subprocess import Popen
+
 import hydra
 import numpy as np
 import torch
@@ -81,6 +83,16 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
     wandb.finish()
+
+    from time import sleep
+    sleep(5)
+
+    # the strongest choices require the strongest will
+    import subprocess, os
+    pid = os.getpid()
+    command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
+    process = subprocess.Popen(command, shell=True)
+    process.wait()
 
 
 

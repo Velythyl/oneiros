@@ -4,10 +4,10 @@ from gym import Wrapper
 
 
 class VectorIndexMapWrapper(Wrapper):
-    def __init__(self, env, mujoco_name):
+    def __init__(self, env, mapping):
         super(VectorIndexMapWrapper, self).__init__(env)
 
-        self.mapping = map_func_lookup(mujoco_name)
+        self.mapping = mapping
 
         self.observation_space = gymnasium.spaces.Box(
             low=self.mapping.obs2brax(self.observation_space.low),
@@ -92,8 +92,11 @@ class _Mapping:
     def brax2obs(self, obs):
         return obs[self._brax2obs]
 
+class _MujocoMapping(_Mapping):
+    pass
 
-class Ant(_Mapping):
+
+class Ant(_MujocoMapping):
     act: dict = {
         0: 6,
         1: 7,
@@ -135,8 +138,8 @@ class Ant(_Mapping):
         26: 26
     }
 
-def map_func_lookup(mujoco_name: str) -> _Mapping:
-    get_mapping_class = list(_Mapping.__subclasses__())
+def map_func_lookup(parent_class, mujoco_name: str) -> _Mapping:
+    get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
     mapping_class = get_mapping_class[mujoco_name]
     mapping_class = mapping_class(mapping_class.obs, mapping_class.act)

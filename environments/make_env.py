@@ -17,7 +17,7 @@ from environments.wrappers.multiplex import MultiPlexEnv
 from environments.wrappers.np2torch import Np2TorchWrapper
 from environments.wrappers.recordepisodestatisticstorch import RecordEpisodeStatisticsTorch
 from environments.wrappers.renderwrap import RenderWrap
-from environments.wrappers.mappings.vector_index_rearrange import VectorIndexMapWrapper
+from environments.wrappers.mappings.vector_index_rearrange import VectorIndexMapWrapper, map_func_lookup, _MujocoMapping
 from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
@@ -57,7 +57,7 @@ def make_mujoco(mujoco_cfg):
 
     def thunk():
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
-        env = VectorIndexMapWrapper(env, BRAX_ENVNAME)
+        env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, MUJOCO_ENVNAME))
         return env
 
     env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)])

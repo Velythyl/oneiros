@@ -111,16 +111,17 @@ def main(cfg):
         from time import sleep
         sleep(5)
 
-        # the strongest choices require the strongest will
-        import subprocess
-        pid = os.getpid()
-        command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
-        process = subprocess.Popen(command, shell=True)
-        process.wait()
-
-        sleep(5)
         import gc
         gc.collect()
+
+        # the strongest choices require the strongest will
+        #import subprocess
+        #pid = os.getpid()
+        #command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
+        #process = subprocess.Popen(command, shell=True)
+        #process.wait()
+
+        #sleep(5)
 
 if __name__ == '__main__':
     main()

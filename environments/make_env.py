@@ -197,7 +197,6 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
 
         def find_multiplex(e):
             if isinstance(e, MultiPlexEnv):
-
                 for e in e.env_list:
                     traverse_envstack(e, kill_asyncvectorenvs)
 

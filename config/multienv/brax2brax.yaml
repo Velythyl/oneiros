@@ -17,6 +17,6 @@ action_repeat: None
 framestack: None
 
 eval_freq: 10000000
-num_eval_steps: 1000
+num_eval_steps: 500
 video_freq: None
 num_video_steps: 100

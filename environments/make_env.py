@@ -60,7 +60,11 @@ def make_mujoco(mujoco_cfg):
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         return env
 
-    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)])
+    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=False)
+    class AsyncVectorEnvActuallyCloseWrapper(Wrapper):
+        def close(self):
+            return self.env.close(terminate=True)
+    env = AsyncVectorEnvActuallyCloseWrapper(env)
 
     env = gym_wrap.StepAPICompatibility(env, output_truncation_bool=False)
 

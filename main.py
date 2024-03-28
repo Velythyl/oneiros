@@ -84,15 +84,6 @@ def do_exp(cfg):
     logging.info("==========Trainning Completed==========")
     wandb.finish()
 
-    from time import sleep
-    sleep(5)
-
-    # the strongest choices require the strongest will
-    import subprocess
-    pid = os.getpid()
-    command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
-    process = subprocess.Popen(command, shell=True)
-    process.wait()
 
 
 
@@ -103,8 +94,33 @@ def main(cfg):
     # ELSE...
     print("DOING POWERSET EVALUATION. NOTE: {eval_envs} WILL BE IGNORED")
 
+    #if cfg.do_powerset_id == "None":
+    #    all_cfgs_to_do = make_powerset_cfgs(cfg)
+    #
+    #    for
+
     for new_cfg in make_powerset_cfgs(cfg):
+        if cfg.multienv.do_powerset_id == "None":
+            pass
+        else:
+            if new_cfg.multienv.do_powerset_id != cfg.multienv.do_powerset_id:
+                continue
+
         do_exp(new_cfg)
+
+        from time import sleep
+        sleep(5)
+
+        # the strongest choices require the strongest will
+        import subprocess
+        pid = os.getpid()
+        command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
+        process = subprocess.Popen(command, shell=True)
+        process.wait()
+
+        sleep(5)
+        import gc
+        gc.collect()
 
 if __name__ == '__main__':
     main()

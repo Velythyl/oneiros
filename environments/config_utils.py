@@ -107,6 +107,7 @@ def make_powerset_cfgs(full_cfg):
     pw_ind = powerset(list(range(len(envs_to_powerset.env_key))))
     pw_ind = filter(lambda x: len(x) > 0, pw_ind)
     pw_ind = list(pw_ind)
+    FULL_PW_IND = copy.deepcopy(pw_ind)
 
     MIN_POWERSET_LEN = full_cfg.multienv.min_powerset_len
     MAX_POWERSET_LEN = full_cfg.multienv.max_powerset_len
@@ -142,7 +143,7 @@ def make_powerset_cfgs(full_cfg):
 
     LIST_OF_CFGS = []
     for ind in pw_ind:
-        OG_CFG = vars(full_cfg)["_content"]
+        OG_CFG = copy.deepcopy(vars(full_cfg)["_content"])
 
         new_train = collect_ind(ind)
         new_eval = collect_ind(MAX_IND)
@@ -150,6 +151,8 @@ def make_powerset_cfgs(full_cfg):
         new_train["num_env"] = [myround(TOT_NUMBER_TRAIN_ENVS // len(ind)) for _ in new_train["num_env"]]
         OG_CFG["multienv"]["train"] = new_train
         OG_CFG["multienv"]["eval"] = new_eval
+        OG_CFG["multienv"]["do_powerset_id"] = FULL_PW_IND.index(ind)
+
         new_cfg = omegaconf.OmegaConf.create(OG_CFG)
         LIST_OF_CFGS.append(new_cfg)
     return LIST_OF_CFGS

@@ -6,6 +6,7 @@ import brax # noqa
 from brax.envs.wrappers.torch import TorchWrapper   # noqa
 from gymnasium import Wrapper
 from gymnasium.vector import AsyncVectorEnv
+from tqdm import tqdm
 
 from environments.config_utils import envkey_multiplex, num_multiplex, slice_multiplex, monad_multiplex, \
     splat_multiplex, marshall_multienv_cfg, cfg_envkey_startswith
@@ -39,7 +40,6 @@ def make_brax(brax_cfg):
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
 
     return env
-
 
 @monad_coerce
 def make_mujoco(mujoco_cfg):
@@ -154,24 +154,24 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     print("...done!")
 
     print("Building eval envs...")
-    many_eval_env = []
+    eval_and_video_envs = []
     for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
         sliced_multiplex = monad_multiplex(sliced_multiplex)
-        many_eval_env += [make_multiplex(sliced_multiplex, seed+i+1)]
+        eval_and_video_envs += [make_multiplex(sliced_multiplex, seed+i+1)]
 
-        assert many_eval_env[-1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
-        assert many_eval_env[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
+        assert eval_and_video_envs[-1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
+        assert eval_and_video_envs[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
     print("...done!")
 
     EVAL_FREQ = multienv_cfg.eval_freq
     if EVAL_FREQ and EVAL_FREQ != "None":
-        eval_envs = many_eval_env
+        eval_envs = eval_and_video_envs
     else:
         eval_envs = []
 
     VIDEO_FREQ = multienv_cfg.video_freq
     if VIDEO_FREQ and VIDEO_FREQ != "None":
-        video_envs = many_eval_env
+        video_envs = eval_and_video_envs
     else:
         video_envs = []
 
@@ -186,12 +186,36 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     all_hooks = EveryN2(hook_steps, hooks)
 
     def close_all_envs():
+        def kill_asyncvectorenvs(e):
+            if isinstance(e, AsyncVectorEnv):
+                print("Pre-emptively killing processes in AsyncVectorEnv...")
+                for process in tqdm(e.processes):
+                    import signal
+                    import os
+                    os.kill(process.pid, signal.SIGKILL)
+                print("...done!")
+
+        def find_multiplex(e):
+            if isinstance(e, MultiPlexEnv):
+
+                for e in e.env_list:
+                    traverse_envstack(e, kill_asyncvectorenvs)
+
+        print("Traversing train envs looking for AsyncVectorEnvs...")
+        traverse_envstack(train_env, [print, find_multiplex])
+        print("...done!")
+
+        for env in eval_and_video_envs:
+            print(f"Traversing eval env {env.ONEIROS_METADATA.env_key} looking for AsyncVectorEnvs...")
+            traverse_envstack(env, [print, kill_asyncvectorenvs])
+            print("...done!")
+
         print("Closing train env...")
         train_env.close()
         print("...done!")
 
         print("Closing eval env...")
-        for env in many_eval_env:
+        for env in eval_and_video_envs:
             print(f"closing: {env.ONEIROS_METADATA.env_key}")
             env.close()
         print("...done!")

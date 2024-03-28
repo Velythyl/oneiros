@@ -1,20 +1,28 @@
 import functools
 from typing import Union, Callable, List
 
+from environments.wrappers.multiplex import MultiPlexEnv
+
 
 def get_envstack(_env, aslist=False):
     def iter(env):
-        def get_next():
+        def get_next(env):
             if hasattr(env, "env"):
                 return env.env
             if hasattr(env, "_env"):
                 return env._env
             return None
 
-        if not get_next():
+        yield env
+
+        if not get_next(env):
             return
-        yield get_next()
-        yield from iter(get_next())
+
+        if isinstance(env, MultiPlexEnv):
+            for e in env.env_list:
+                yield from iter(e)
+        else:
+            yield from iter(get_next(env))
 
     if aslist:
         return list(iter(_env))

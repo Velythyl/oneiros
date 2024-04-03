@@ -73,16 +73,17 @@ def do_exp(cfg):
 
     close_all_envs()
 
-    model_save_path = os.path.join(get_save_path(), 'model.pkl')
+    #model_save_path = os.path.join(get_save_path(), 'model.pkl')
 
-
-    logging.info("NOT SAVING MODEL>>>>>")
+    #logging.info("NOT SAVING MODEL>>>>>")
     #logging.info(f"==========Saving model to {model_save_path}==========")
     #if cfg.train.alg == "ppo":
     #torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
     wandb.finish()
+
+    exit()
 
 
 
@@ -94,34 +95,22 @@ def main(cfg):
     # ELSE...
     print("DOING POWERSET EVALUATION. NOTE: {eval_envs} WILL BE IGNORED")
 
-    #if cfg.do_powerset_id == "None":
-    #    all_cfgs_to_do = make_powerset_cfgs(cfg)
-    #
-    #    for
-
-    for new_cfg in make_powerset_cfgs(cfg):
-        if cfg.multienv.do_powerset_id == "None":
-            pass
-        else:
+    all_powerset_cfgs = make_powerset_cfgs(cfg)
+    if cfg.multienv.do_powerset_id == "None":
+        for new_cfg in all_powerset_cfgs:
+            import subprocess
+            pid = os.getpid()
+            command = f"python3 main.py multienv.do_powerset_id={new_cfg.multienv.do_powerset_id}"
+            process = subprocess.Popen(command, shell=True)
+            process.wait()
+        exit()
+    else:
+        for new_cfg in all_powerset_cfgs:
             if new_cfg.multienv.do_powerset_id != cfg.multienv.do_powerset_id:
                 continue
 
-        do_exp(new_cfg)
+            do_exp(new_cfg)
 
-        from time import sleep
-        sleep(5)
-
-        import gc
-        gc.collect()
-
-        # the strongest choices require the strongest will
-        #import subprocess
-        #pid = os.getpid()
-        #command=f"pgrep -fl python | awk '!/{pid}/{{print $1}}' | xargs kill"
-        #process = subprocess.Popen(command, shell=True)
-        #process.wait()
-
-        #sleep(5)
 
 if __name__ == '__main__':
     main()

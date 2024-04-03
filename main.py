@@ -7,6 +7,7 @@ import random
 
 # import gym
 from subprocess import Popen
+from time import sleep
 
 import hydra
 import numpy as np
@@ -102,7 +103,10 @@ def main(cfg):
             pid = os.getpid()
             command = f"python3 main.py multienv.do_powerset_id={new_cfg.multienv.do_powerset_id}"
             process = subprocess.Popen(command, shell=True)
-            process.wait()
+
+            while process.poll() is None:
+                sleep(10)
+
         exit()
     else:
         for new_cfg in all_powerset_cfgs:

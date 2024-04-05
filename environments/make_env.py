@@ -25,7 +25,7 @@ from src.utils.record import record
 
 
 @monad_coerce
-def make_brax(brax_cfg):
+def make_brax(brax_cfg, seed):
     if not cfg_envkey_startswith(brax_cfg, "brax"):
         return None
 
@@ -34,7 +34,7 @@ def make_brax(brax_cfg):
 
     env = brax.envs.create(env_name=ENVNAME, episode_length=brax_cfg.max_episode_length, backend=BACKEND,
                            batch_size=brax_cfg.num_env) # EP LEN, NUM_ENV
-    env = VectorGymWrapper(env, seed=0)  # todo
+    env = VectorGymWrapper(env, seed=seed)
     env = TorchWrapper(env, device=brax_cfg.device)
 
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
@@ -42,7 +42,7 @@ def make_brax(brax_cfg):
     return env
 
 @monad_coerce
-def make_mujoco(mujoco_cfg):
+def make_mujoco(mujoco_cfg, seed):
     if not cfg_envkey_startswith(mujoco_cfg, "mujoco"):
         return None
 
@@ -55,8 +55,21 @@ def make_mujoco(mujoco_cfg):
         "ant": "Ant-v4"
     }[BRAX_ENVNAME]
 
+    class SeededEnv(Wrapper):
+        def __init__(self, env):
+            super().__init__(env)
+            self._seed = seed
+
+        def reset(self, **kwargs):
+            ret = super(SeededEnv, self).reset(seed=self._seed)
+            import numpy as np
+            new_seed = np.random.randint(0, 20000)
+            self._seed = new_seed
+            return ret
+
     def thunk():
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+        env = SeededEnv(env)
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         return env
 
@@ -98,8 +111,8 @@ class ONEIROS_METADATA:
 def make_multiplex(multiplex_env_cfg, seed):
     base_envs = []
     for sliced_multiplex in splat_multiplex(multiplex_env_cfg):
-        base_envs += make_brax(sliced_multiplex)
-        base_envs += make_mujoco(sliced_multiplex)
+        base_envs += make_brax(sliced_multiplex, seed)
+        base_envs += make_mujoco(sliced_multiplex, seed)
 
     base_envs = list(filter(lambda x: x is not None, base_envs))
     assert len(base_envs) == num_multiplex(multiplex_env_cfg)

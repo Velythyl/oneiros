@@ -17,6 +17,7 @@ from omegaconf import omegaconf
 from environments.config_utils import envkey_runname_multienv, marshall_multienv_cfg, make_powerset_cfgs, \
     envkey_tags_multienv
 from src.algs.ppo import PPO
+from src.utils import wandbcsv
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,10 +35,20 @@ def get_save_path():
 def do_exp(cfg):
     import wandb
 
+    seed = cfg.wandb["seed"]
+    if seed == -1:
+        seed = random.randint(0, 20000)
+        cfg.wandb["seed"] = seed
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".30"
 
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
     TAGS = envkey_tags_multienv(cfg.multienv)
+
+    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed})
 
     run = wandb.init(
         # entity=cfg.wandb.entity,
@@ -54,13 +65,6 @@ def do_exp(cfg):
 
     device = cfg.multienv.device
 
-    seed = cfg.wandb["seed"]
-    if seed == -1:
-        seed = random.randint(0, 20000)
-        cfg.wandb["seed"] = seed
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
     # torch.backends.cudnn.deterministic = True # Potential Variable
 
     from environments.make_env import make_sim2sim
@@ -100,7 +104,6 @@ def main(cfg):
     if cfg.multienv.do_powerset_id == "None":
         for new_cfg in all_powerset_cfgs:
             import subprocess
-            pid = os.getpid()
             command = f"python3 main.py multienv.do_powerset_id={new_cfg.multienv.do_powerset_id}"
             process = subprocess.Popen(command, shell=True)
 

@@ -1,9 +1,9 @@
 env_key:
   - mujoco-ant
-  #- braxgeneralized-ant
-  #- braxpositional-ant
-  #- braxspring-ant
-  #- braxmjx-ant
+  - braxgeneralized-ant
+  - braxpositional-ant
+  - braxspring-ant
+  - braxmjx-ant
 
 device: cuda
 num_env: 200

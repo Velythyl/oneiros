@@ -95,15 +95,16 @@ def encapsulate(other_metadata={}):
 
         wandb.log = _log
 
-        WANDB_FINISH = wandb.finish
-
-        def _finish(**wandb_finish_kwargs):
-            finish(**wandb_finish_kwargs)
-            WANDB_FINISH(**wandb_finish_kwargs)
-
-        wandb.finish = _finish
-
     wandb.init = _init
+
+    WANDB_FINISH = wandb.finish
+
+    #def _finish(**wandb_finish_kwargs):
+    #    finish(**wandb_finish_kwargs)
+    #    WANDB_FINISH(**wandb_finish_kwargs)
+    #
+    #wandb.finish = _finish
+
 
 
 instance = None

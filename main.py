@@ -86,6 +86,8 @@ def do_exp(cfg):
     #torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
+
+    wandbcsv.finish()
     wandb.finish()
 
     exit()
@@ -95,6 +97,7 @@ def do_exp(cfg):
 
 @hydra.main(version_base=None, config_path="config", config_name="conf")
 def main(cfg):
+    import sys
     if cfg.multienv.do_powerset is False:
         return do_exp(cfg)
     # ELSE...
@@ -110,7 +113,6 @@ def main(cfg):
             while process.poll() is None:
                 sleep(10)
 
-        exit()
     else:
         for new_cfg in all_powerset_cfgs:
             if new_cfg.multienv.do_powerset_id != cfg.multienv.do_powerset_id:

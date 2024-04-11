@@ -116,7 +116,6 @@ class PPO(_Alg):
                 self.optimizer.param_groups[0]["lr"] = lrnow
 
             from src.utils.dict_list import DictList
-            wandb_log_returns = DictList()
             for step in range(0, self.num_steps):
                 global_step += 1 * self.num_envs
                 obs[step] = next_obs

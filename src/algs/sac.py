@@ -261,9 +261,6 @@ class SAC(_Alg):
         self.q_optimizer = optim.Adam(list(self.qf1.parameters()) + list(self.qf2.parameters()), lr=q_lr)
         self.actor_optimizer = optim.Adam(list(self.actor.parameters()), lr=policy_lr)
 
-        def thunk():
-            import numpy as np
-            envs.single_observation_space.dtype = np.float32
 
     def train(self):
         # Automatic entropy tuning
@@ -323,37 +320,7 @@ class SAC(_Alg):
             global_step += self.train_envs.num_envs
             single_global_step += 1
 
-            def add_extra_traindata():
-                extra_traindata = envs.get_traindata()
-                if extra_traindata["obs"] is None:
-                    return 0
-
-                num_particles = extra_traindata["obs"].shape[1]   # num frames for each envs
-                history_len = extra_traindata["obs"].shape[2]   # num frames for each envs
-                for p in range(num_particles):
-                    for h in range(history_len):
-                        rb_add = []
-                        for key in ["obs", "next_obs", "action", "reward", "done"]:
-                            rb_add.append(extra_traindata[key][:,p,h])
-                        self.rb.add(*rb_add)
-                num_added = num_particles * history_len * envs.num_envs
-                return num_added
-            #global_step += add_extra_traindata()    # fixme this is only sort-of true
-
             logger.info(done=terminations, info=infos, global_step=global_step)
-            """
-            if terminations.any():
-                if wandb_log_returns is None:
-                    wandb_log_returns = DictList()
-                episodic_return = infos['train#r'][terminations.bool()].cpu().numpy()
-                episodic_length = infos['train#l'][terminations.bool()].float().cpu().numpy()
-                wandb_log_returns["perf/ep_r"] = episodic_return
-                wandb_log_returns["perf/ep_l"] = episodic_length
-                episodic_return = episodic_return.mean()
-                episodic_length = episodic_length.mean()
-                print(
-                    f"global_step={global_step}, episodic_return={episodic_return}, episodic_length={episodic_length}")
-            """
 
             # TRY NOT TO MODIFY: save data to reply buffer; handle `final_observation`
             real_next_obs = torch.clone(next_obs)

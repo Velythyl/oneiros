@@ -10,7 +10,10 @@ class MatFrameStackEnv(Wrapper):
         self.device = device
         self.num_stack = num_stack
 
-        self.obs_space_shape = (self.num_stack, *self.observation_space.shape[1:])
+
+        assert len(self.observation_space.shape[1:]) == 1
+
+        self.obs_space_shape = (self.observation_space.shape[0], self.num_stack, *self.observation_space.shape[1:])
         self.observation_space = gym.spaces.Box(low=np.ones(self.obs_space_shape) * -np.inf,
                                                 high=np.ones(self.obs_space_shape) * np.inf)
 

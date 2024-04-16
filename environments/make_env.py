@@ -77,7 +77,7 @@ def make_mujoco(mujoco_cfg, seed):
 
     print("Pre async")
 
-    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True)
+    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True, copy=False)
 
     print("Post async")
 
@@ -160,8 +160,6 @@ def make_multiplex(multiplex_env_cfg, seed):
         env = RenderWrap(env)
         env = RecordEpisodeStatisticsTorch(env, device=multiplex_env_cfg.device[0], num_envs=slice_multiplex(multiplex_env_cfg, i).num_env)
         env = InfoLogWrap(env, prefix=envkey_multiplex(slice_multiplex(multiplex_env_cfg, i)))
-
-
 
         assert single_action_space(env) == PROTO_ACT
         assert single_observation_space(env) == PROTO_OBS

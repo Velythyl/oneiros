@@ -3,12 +3,12 @@ import torch
 from gym import Wrapper
 
 def np2torch(np_arr):
-    np_arr = np.copy(np_arr)
+    #np_arr = np.copy(np_arr)
 
     return torch.from_numpy(np_arr)
 
 def torch2np(torch_t):
-    torch_t = torch.clone(torch_t)
+    #torch_t = torch.clone(torch_t)
     return torch_t.detach().cpu().numpy()
 
 def dict2torch(np_dict, device):

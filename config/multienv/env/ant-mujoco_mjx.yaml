@@ -10,5 +10,5 @@ num_env: 200
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo
-framestack: 8 # todo
+framestack: #8 # todo
 mat_framestack_instead: False

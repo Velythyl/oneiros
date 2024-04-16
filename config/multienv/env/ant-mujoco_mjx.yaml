@@ -1,5 +1,5 @@
 env_key:
-  #- mujoco-ant
+  - mujoco-ant
   - braxgeneralized-ant
   - braxpositional-ant
   - braxspring-ant

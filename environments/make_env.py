@@ -135,9 +135,9 @@ def make_multiplex(multiplex_env_cfg, seed):
         return env.observation_space.shape[0]
 
     for i, env in enumerate(base_envs):
-        if slice_multiplex(multiplex_env_cfg, i).framestack > 1:
-            env = VecFrameStackEnv(env, device=multiplex_env_cfg.device[0],
-                                   num_stack=slice_multiplex(multiplex_env_cfg, i).framestack)
+        #if slice_multiplex(multiplex_env_cfg, i).framestack > 1:
+        #    env = VecFrameStackEnv(env, device=multiplex_env_cfg.device[0],
+        #                           num_stack=slice_multiplex(multiplex_env_cfg, i).framestack)
 
         if slice_multiplex(multiplex_env_cfg, i).last_action is not False:
             env = LastActEnv(env, device=multiplex_env_cfg.device[0])

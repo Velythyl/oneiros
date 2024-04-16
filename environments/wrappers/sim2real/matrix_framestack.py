@@ -20,8 +20,8 @@ class MatFrameStackEnv(Wrapper):
 
     def reset_buf(self, mask):
         if mask is None:
-            self.buf = torch.zeros(self.obs_space_shape).to(self.device)
-            self.buf_plex = torch.arange(self.obs_space_shape[0], dtype=torch.int32)
+            self.buf = torch.zeros(self.obs_space_shape, device=self.device)
+            self.buf_plex = torch.arange(self.obs_space_shape[0], dtype=torch.int32, device=self.device)
         else:
             mask = mask.bool()
             self.buf[mask] = self.buf[mask] * 0

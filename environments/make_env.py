@@ -129,6 +129,8 @@ def make_multiplex(multiplex_env_cfg, seed):
         assert env.observation_space.shape[0] == env.action_space.shape[0]
         return env.observation_space.shape[0]
 
+    print("Pre sim2real wrap")
+
     for i, env in enumerate(base_envs):
         if slice_multiplex(multiplex_env_cfg, i).framestack > 1:
             env = VecFrameStackEnv(env, device=multiplex_env_cfg.device[0],
@@ -138,6 +140,8 @@ def make_multiplex(multiplex_env_cfg, seed):
             env = LastActEnv(env, device=multiplex_env_cfg.device[0])
 
         base_envs[i] = env
+
+    print("Post")
 
     PROTO_ACT = single_action_space(base_envs[0])
     PROTO_OBS = single_observation_space(base_envs[0])

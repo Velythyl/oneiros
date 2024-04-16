@@ -70,6 +70,8 @@ def make_mujoco(mujoco_cfg, seed):
             return ret
 
     def thunk():
+        print(MUJOCO_ENVNAME)
+        print(BRAX_ENVNAME)
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
         env = SeededEnv(env)
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))

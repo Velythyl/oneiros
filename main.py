@@ -49,7 +49,7 @@ def do_exp(cfg):
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
     TAGS = envkey_tags_multienv(cfg.multienv)
 
-    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed, "RL_ALG": cfg.rl.alg}, pd_attrs=dict(vars(cfg)))
+    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed, "RL_ALG": cfg.rl.alg, "FRAMESTACK": cfg.multienv.train.framestack}, pd_attrs=dict(vars(cfg)))
 
     run = wandb.init(
         # entity=cfg.wandb.entity,

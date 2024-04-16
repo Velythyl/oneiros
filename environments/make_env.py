@@ -79,7 +79,7 @@ def make_mujoco(mujoco_cfg, seed):
 
     print("Pre async")
 
-    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=False)
+    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True)
 
     print("Post async")
 

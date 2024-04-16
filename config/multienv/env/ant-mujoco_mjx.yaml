@@ -6,9 +6,9 @@ env_key:
   - braxmjx-ant
 
 device: cuda
-num_env: 200
+num_env: 100
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo
-framestack: 4 #8 # todo
+framestack: 10 #8 # todo
 mat_framestack_instead: False

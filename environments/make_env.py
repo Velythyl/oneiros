@@ -67,6 +67,7 @@ def make_mujoco(mujoco_cfg, seed):
             ret = super(SeededEnv, self).reset(seed=self._seed)
             import numpy as np
             new_seed = np.random.randint(0, 20000)
+            np.random.seed(new_seed)
             self._seed = new_seed
             return ret
 
@@ -78,7 +79,7 @@ def make_mujoco(mujoco_cfg, seed):
 
     print("Pre async")
 
-    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True, copy=False)
+    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True, copy=False, context="fork")
 
     print("Post async")
 

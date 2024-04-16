@@ -12,7 +12,7 @@ from time import sleep
 import hydra
 import numpy as np
 import torch
-from omegaconf import omegaconf
+from omegaconf import omegaconf, OmegaConf
 
 from environments.config_utils import envkey_runname_multienv, marshall_multienv_cfg, make_powerset_cfgs, \
     envkey_tags_multienv
@@ -101,7 +101,6 @@ def do_exp(cfg):
 
 @hydra.main(version_base=None, config_path="config", config_name="conf")
 def main(cfg):
-    import sys
     if cfg.multienv.do_powerset is False:
         return do_exp(cfg)
     # ELSE...
@@ -111,7 +110,11 @@ def main(cfg):
     if cfg.multienv.do_powerset_id == "None":
         for new_cfg in all_powerset_cfgs:
             import subprocess
-            command = f"python3 main.py multienv.do_powerset_id={new_cfg.multienv.do_powerset_id}"
+
+            with open("/tmp/POWERSET_ID.yaml", "w") as f:
+                OmegaConf.save(cfg, f)
+
+            command = f"python3 main.py --config-path=/tmp --config-name=POWERSET_ID multienv.do_powerset_id={new_cfg.multienv.do_powerset_id} "
             process = subprocess.Popen(command, shell=True)
 
             while process.poll() is None:

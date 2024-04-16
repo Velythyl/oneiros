@@ -24,18 +24,3 @@ class _Alg:
         # todo when you make a new subclass: call every few updates: self.write_wandb(logs that are always there, logs that might not exist, global step)
         raise NotImplementedError()
 
-    def write_wandb(self, wandb_logs, wandb_log_returns, global_step):
-        hook_start = time.time()
-        wandb_logs.update(self.all_hooks.step(global_step, agent=self.agent))
-        if wandb_log_returns:
-            wandb_logs.update(wandb_log_returns.getmean())
-        hook_end = time.time()
-        self.time_spent_hooking += hook_end - hook_start
-
-        sps = int(global_step / (
-                (time.time() - self.start_time) - self.time_spent_hooking
-        ))
-
-        wandb_logs["charts/sps"] = sps
-        print("sps:", sps)
-        wandb.log(wandb_logs)

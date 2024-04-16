@@ -19,6 +19,8 @@ from environments.wrappers.np2torch import Np2TorchWrapper
 from environments.wrappers.recordepisodestatisticstorch import RecordEpisodeStatisticsTorch
 from environments.wrappers.renderwrap import RenderWrap
 from environments.wrappers.mappings.vector_index_rearrange import VectorIndexMapWrapper, map_func_lookup, _MujocoMapping
+from environments.wrappers.sim2real.last_act import LastActEnv
+from environments.wrappers.sim2real.vector_framestack import VecFrameStackEnv
 from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
@@ -127,6 +129,16 @@ def make_multiplex(multiplex_env_cfg, seed):
         assert env.observation_space.shape[0] == env.action_space.shape[0]
         return env.observation_space.shape[0]
 
+    for i, env in enumerate(base_envs):
+        if slice_multiplex(multiplex_env_cfg, i).framestack > 1:
+            env = VecFrameStackEnv(env, device=multiplex_env_cfg.device[0],
+                                   num_stack=slice_multiplex(multiplex_env_cfg, i).framestack)
+
+        if slice_multiplex(multiplex_env_cfg, i).last_action is not False:
+            env = LastActEnv(env, device=multiplex_env_cfg.device[0])
+
+        base_envs[i] = env
+
     PROTO_ACT = single_action_space(base_envs[0])
     PROTO_OBS = single_observation_space(base_envs[0])
     PROTO_NUM_ENV = num_envs(base_envs[0])
@@ -134,10 +146,13 @@ def make_multiplex(multiplex_env_cfg, seed):
     def metadata_maker(cfg, num_env):
         return ONEIROS_METADATA(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS))
 
+
     for i, env in enumerate(base_envs):
         env = RenderWrap(env)
         env = RecordEpisodeStatisticsTorch(env, device=multiplex_env_cfg.device[0], num_envs=slice_multiplex(multiplex_env_cfg, i).num_env)
         env = InfoLogWrap(env, prefix=envkey_multiplex(slice_multiplex(multiplex_env_cfg, i)))
+
+
 
         assert single_action_space(env) == PROTO_ACT
         assert single_observation_space(env) == PROTO_OBS

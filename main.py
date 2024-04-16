@@ -17,6 +17,7 @@ from omegaconf import omegaconf
 from environments.config_utils import envkey_runname_multienv, marshall_multienv_cfg, make_powerset_cfgs, \
     envkey_tags_multienv
 from src.algs.ppo import PPO
+from src.algs.sac import SAC
 from src.utils import wandbcsv
 
 logging.basicConfig(level=logging.INFO)
@@ -48,7 +49,7 @@ def do_exp(cfg):
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
     TAGS = envkey_tags_multienv(cfg.multienv)
 
-    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed})
+    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed, "RL_ALG": cfg.rl.alg}, pd_attrs=dict(vars(cfg)))
 
     run = wandb.init(
         # entity=cfg.wandb.entity,
@@ -72,7 +73,11 @@ def do_exp(cfg):
 
     logging.info("==========Begin trainning the Agent==========")
 
-    agent = PPO(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
+    if cfg.rl.alg == "ppo":
+        agent = PPO(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
+    elif cfg.rl.alg == "sac":
+        agent = SAC(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
+
 
     agent.train()
 
@@ -86,10 +91,9 @@ def do_exp(cfg):
     #torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
-    #wandb.finish()
-    
-    wandbcsv.finish()
 
+    #wandb.log_artifact(wandbcsv.get_pd_artifact())
+    wandbcsv.finish()
     exit()
 
 
@@ -97,6 +101,7 @@ def do_exp(cfg):
 
 @hydra.main(version_base=None, config_path="config", config_name="conf")
 def main(cfg):
+    import sys
     if cfg.multienv.do_powerset is False:
         return do_exp(cfg)
     # ELSE...
@@ -112,7 +117,6 @@ def main(cfg):
             while process.poll() is None:
                 sleep(10)
 
-        exit()
     else:
         for new_cfg in all_powerset_cfgs:
             if new_cfg.multienv.do_powerset_id != cfg.multienv.do_powerset_id:

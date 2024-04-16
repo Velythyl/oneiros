@@ -12,8 +12,8 @@ class MultiPlexEnv(Wrapper):
         self.device = device
         self.num_envs_per_env = env_list[0].observation_space.shape[0]
 
-        obs_space_shape = (self.num_envs_per_env * len(env_list), *self.observation_space.shape[1:])
-        self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=obs_space_shape)
+        self.obs_space_shape = (self.num_envs_per_env * len(env_list), *self.observation_space.shape[1:])
+        #self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=obs_space_shape)
         #np.ones(obs_space_shape) * -np.inf, high=np.ones(obs_space_shape) * np.inf)
         act_space_shape = (self.num_envs_per_env * len(env_list), *self.action_space.shape[1:])
         self.action_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=act_space_shape)
@@ -24,6 +24,10 @@ class MultiPlexEnv(Wrapper):
         self.env_map_to_name = []
         for env in self.env_list:
             self.env_map_to_name.append(env.ONEIROS_METADATA.env_key)
+
+    @property
+    def observation_space(self):
+        return gym.spaces.Box(low=-np.inf, high=np.inf, shape=self.obs_space_shape)
 
     def close(self):
         for env in self.env_list:

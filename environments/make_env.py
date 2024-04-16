@@ -75,7 +75,12 @@ def make_mujoco(mujoco_cfg, seed):
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         return env
 
+    print("Pre async")
+
     env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=False)
+
+    print("Post async")
+
     class AsyncVectorEnvActuallyCloseWrapper(Wrapper):
         def close(self):
             return self.env.close(terminate=True)

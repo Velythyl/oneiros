@@ -8,6 +8,8 @@ from environments.wrappers.sim2real.matrix_framestack import MatFrameStackEnv
 
 class VecFrameStackEnv(Wrapper):
     def __init__(self, env, device, num_stack):
+        print(device)
+
         super().__init__(
             MatFrameStackEnv(env, device, num_stack)
         )
@@ -22,7 +24,6 @@ class VecFrameStackEnv(Wrapper):
     @property
     def observation_space(self):
         return gym.spaces.Box(low=-np.inf, high=np.inf, shape=self.obs_space_shape)
-
 
     def reset(self, **kwargs):
         obs = super(VecFrameStackEnv, self).reset(**kwargs)

@@ -7,6 +7,9 @@ from gym import Wrapper
 class MatFrameStackEnv(Wrapper):
     def __init__(self, env, device, num_stack):
         super().__init__(env)
+
+        print(device)
+
         self.device = device
         self.num_stack = num_stack
 

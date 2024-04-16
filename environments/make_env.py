@@ -1,4 +1,5 @@
 import functools
+import gc
 from typing import Any, Tuple
 
 from flax import struct
@@ -182,6 +183,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
 
     print("Building training envs...")
     train_env = make_multiplex(multienv_cfg.train, seed)
+    gc.collect()
     print("...done!")
 
     print("Building eval envs...")
@@ -192,6 +194,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
 
         assert eval_and_video_envs[-1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
         assert eval_and_video_envs[-1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
+        gc.collect()
     print("...done!")
 
     EVAL_FREQ = multienv_cfg.eval_freq

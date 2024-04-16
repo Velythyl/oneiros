@@ -1,3 +1,4 @@
+import os
 from time import sleep
 
 import numpy as np
@@ -8,10 +9,11 @@ from tqdm import tqdm
 
 
 class WANDB_CSV:
-    def __init__(self, metadata=None):
+    def __init__(self, metadata=None, pd_attrs={}):
         self.dico = {"time": []}
 
         self.metadata = metadata
+        self.pd_attrs = pd_attrs
 
     @property
     def time(self):
@@ -76,15 +78,17 @@ class WANDB_CSV:
 
     def get_pd(self):
         as_np = self.get_np()
-        return pandas.DataFrame(as_np)
+        df = pandas.DataFrame(as_np)
+        df.attrs = self.pd_attrs
+        return df
 
 
-def encapsulate(other_metadata={}):
+def encapsulate(other_metadata={}, pd_attrs={}):
     import wandb
     WANDB_INIT = wandb.init
 
     def _init(**wandb_init_kwargs):
-        init(other_metadata, **wandb_init_kwargs)
+        init(other_metadata, pd_attrs, **wandb_init_kwargs)
         WANDB_INIT(**wandb_init_kwargs)
 
         WANDB_LOG = wandb.log
@@ -110,7 +114,7 @@ def encapsulate(other_metadata={}):
 instance = None
 
 
-def init(other_metadata, **wandb_init_kwargs):
+def init(other_metadata, pd_attrs, **wandb_init_kwargs):
     global instance
     assert instance is None
 
@@ -122,15 +126,26 @@ def init(other_metadata, **wandb_init_kwargs):
         metadata[tag] = "tag"
     other_metadata.update(metadata)
 
-    instance = WANDB_CSV(other_metadata)
+    instance = WANDB_CSV(other_metadata, pd_attrs)
     return _get_instance()
 
-
-def finish(**wandb_finish_kwargs):
-    wandb_run_dir = "/".join(wandb.run.dir.split("/")[:-1])
+def save_pd():
     global instance
     pd = instance.get_pd()
-    pd.to_csv(f"{wandb_run_dir}/pd_logs.csv")
+    pd.to_csv(get_pd_path())
+
+def get_pd_path():
+    wandb_run_dir = "/".join(wandb.run.dir.split("/")[:-1])
+    return f"{wandb_run_dir}/pd_logs.csv"
+
+def get_pd_artifact():
+    save_pd()
+    artifact = wandb.Artifact(name=f"{get_pd_path().split('/')[-1]}", type="csv")
+    artifact.add_file(get_pd_path())
+
+def finish(**wandb_finish_kwargs):
+    save_pd()
+    global instance
     instance = None
 
 

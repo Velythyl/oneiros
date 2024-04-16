@@ -12,8 +12,8 @@ class VecFrameStackEnv(Wrapper):
             MatFrameStackEnv(env, device, num_stack)
         )
 
-        assert len(self.observation_space.shape[1:]) == 1
-        NUM_OBS = self.observation_space.shape[1]
+        assert len(env.observation_space.shape[1:]) == 1
+        NUM_OBS = env.observation_space.shape[1]
 
         self.obs_space_shape = (self.observation_space.shape[0], self.num_stack * NUM_OBS)
         self.observation_space = gym.spaces.Box(low=np.ones(self.obs_space_shape) * -np.inf,
@@ -30,4 +30,4 @@ class VecFrameStackEnv(Wrapper):
         return flatten_obs(obs), rew, done, info
 
 def flatten_obs(obs):
-    return torch.flatten(obs)
+    return torch.vmap(torch.flatten)(obs)

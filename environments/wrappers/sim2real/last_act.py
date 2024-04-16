@@ -6,7 +6,7 @@ from gym import Wrapper
 
 
 class LastActEnv(Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, device):
         super().__init__(env)
 
         assert len(self.observation_space.shape[1:]) == 1
@@ -16,10 +16,13 @@ class LastActEnv(Wrapper):
         self.obs_space_shape = (self.observation_space.shape[0], NUM_OBS)
         self.observation_space = gym.spaces.Box(low=np.ones(self.obs_space_shape) * -np.inf,
                                                 high=np.ones(self.obs_space_shape) * np.inf)
+        self.device = device
 
     def make_obs(self, obs, act=None):
         if act is None:
-            act = torch.zeros((self.observation_space.shape[0], self.action_space.shape[1]))
+            act = torch.zeros((self.observation_space.shape[0], self.action_space.shape[1]), device=self.device)
+        else:
+            act = act.to(self.device)
         return torch.hstack((obs, act))
 
     def reset(self, **kwargs):

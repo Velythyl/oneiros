@@ -16,27 +16,36 @@ class MatFrameStackEnv(Wrapper):
         self.obs_space_shape = (self.observation_space.shape[0], self.num_stack, *self.observation_space.shape[1:])
         self.observation_space = gym.spaces.Box(low=np.ones(self.obs_space_shape) * -np.inf,
                                                 high=np.ones(self.obs_space_shape) * np.inf)
+        self.reset_buf(None)
 
-    def reset_buf(self):
-        self.buf = torch.zeros(self.obs_space_shape).to(self.device)
-        self.buf_idx = self.num_stack-1
+    def reset_buf(self, mask):
+        if mask is None:
+            self.buf = torch.zeros(self.obs_space_shape).to(self.device)
+            self.buf_plex = torch.arange(self.obs_space_shape[0], dtype=torch.int32)
+        else:
+            mask = mask.bool()
+            self.buf[mask] = self.buf[mask] * 0
 
     def add_obs_to_buf(self, obs):
-        self.buf[self.buf_idx] = obs
+        def roll_per_idx(buf):
+            return torch.roll(buf, 1, dims=(0,))
 
-        self.buf_idx -= 1
-        if self.buf_idx < 0:
-            self.buf_idx = 0
+        buf = torch.vmap(roll_per_idx)(self.buf)
+        buf[self.buf_plex, 0] = obs
+
+        self.buf = buf
 
     def reset(self, **kwargs):
+        self.reset_buf(None)
+
         obs = super(MatFrameStackEnv, self).reset(**kwargs)
-
         self.add_obs_to_buf(obs)
-
         return self.buf
 
     def step(self, action):
         obs, rew, done, info = super(MatFrameStackEnv, self).step(action)
+
+        self.reset_buf(mask=done)
 
         self.add_obs_to_buf(obs)
 

@@ -49,7 +49,7 @@ def do_exp(cfg):
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
     TAGS = envkey_tags_multienv(cfg.multienv)
 
-    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed, "RL_ALG": cfg.rl.alg})
+    wandbcsv.encapsulate(other_metadata={"seed": cfg.wandb.seed, "RL_ALG": cfg.rl.alg}, pd_attrs=dict(vars(cfg)))
 
     run = wandb.init(
         # entity=cfg.wandb.entity,
@@ -92,6 +92,7 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
 
+    wandb.log_artifact(wandbcsv.get_pd_artifact())
     wandbcsv.finish()
     wandb.finish()
 

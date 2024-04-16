@@ -86,7 +86,9 @@ def do_exp(cfg):
     #torch.save(agent.agent.state_dict(), get_save_path() + "/saved_agent.pth")
 
     logging.info("==========Trainning Completed==========")
-    wandb.finish()
+    #wandb.finish()
+    
+    wandbcsv.finish()
 
     exit()
 

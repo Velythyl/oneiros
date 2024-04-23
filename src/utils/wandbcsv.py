@@ -142,6 +142,7 @@ def get_pd_artifact():
     save_pd()
     artifact = wandb.Artifact(name=f"{get_pd_path().split('/')[-1]}", type="csv")
     artifact.add_file(get_pd_path())
+    return artifact
 
 def finish(**wandb_finish_kwargs):
     save_pd()

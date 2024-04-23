@@ -92,7 +92,7 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
 
-    #wandb.log_artifact(wandbcsv.get_pd_artifact())
+    wandb.log_artifact(wandbcsv.get_pd_artifact())
     wandbcsv.finish()
     exit()
 

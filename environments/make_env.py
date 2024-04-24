@@ -1,3 +1,6 @@
+import os
+import xml.etree.ElementTree
+import numpy as np
 import functools
 import gc
 from typing import Any, Tuple
@@ -41,6 +44,7 @@ def make_brax(brax_cfg, seed):
     env = TorchWrapper(env, device=brax_cfg.device)
 
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
+    print("brax_cfg.num_env", brax_cfg.num_env)
 
     return env
 
@@ -65,14 +69,29 @@ def make_mujoco(mujoco_cfg, seed):
 
         def reset(self, **kwargs):
             ret = super(SeededEnv, self).reset(seed=self._seed)
-            import numpy as np
             new_seed = np.random.randint(0, 20000)
             np.random.seed(new_seed)
             self._seed = new_seed
             return ret
 
+    def domain_randomization():
+        tmp = xml.etree.ElementTree.parse(os.getcwd() + "/environments/" + BRAX_ENVNAME + ".xml")
+
+        for elem in tmp.findall(".//geom"):
+            elem.set("density", str(np.random.uniform(low=mujoco_cfg.min_mass,
+                                                      high=mujoco_cfg.max_mass)))
+
+        # Write back to file
+        tmp.write(os.getcwd() + "/environments/tmp_" + BRAX_ENVNAME + ".xml")
+
     def thunk():
-        env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+        if mujoco_cfg.use_randomization:
+            domain_randomization()
+            env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True,
+                                 xml_file=os.getcwd() + "/environments/tmp_" + BRAX_ENVNAME + ".xml")
+        else:
+            env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+
         env = SeededEnv(env)
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         return env

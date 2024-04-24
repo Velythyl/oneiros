@@ -12,3 +12,7 @@ last_action: True
 action_repeat: None  # todo
 framestack: 10 #8 # todo
 mat_framestack_instead: False
+
+use_randomization: true
+min_mass: 4
+max_mass: 6

@@ -44,7 +44,6 @@ def make_brax(brax_cfg, seed):
     env = TorchWrapper(env, device=brax_cfg.device)
 
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
-    print("brax_cfg.num_env", brax_cfg.num_env)
 
     return env
 

@@ -73,7 +73,16 @@ class WANDB_CSV:
     def get_np(self):
         ret = {}
         for key, val in self.dico.items():
-            ret[key] = np.array(val)
+            #print(f"\t key={key}: val={val}")
+            try:
+                ret[key] = np.array(val)
+            except ValueError:
+                if isinstance(val, np.ndarray):
+                    ret[key] = np.array(list(map(lambda x: x[0], val)))
+                else:
+                    continue
+            except Exception:
+                continue
         return ret
 
     def get_pd(self):

@@ -1,7 +1,0 @@
-env_key: braxpositional-halfcheetah, braxspring-halfcheetah, braxgeneralized-halfcheetah
-
-device: cuda
-num_env: 100
-max_episode_length: 1000
-action_repeat: 1  # todo
-framestack: 1 # todo

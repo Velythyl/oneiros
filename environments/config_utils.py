@@ -1,4 +1,6 @@
 import copy
+import dataclasses
+from typing import Union, List
 
 import numpy as np
 from omegaconf import omegaconf
@@ -90,7 +92,6 @@ def splat_multiplex(multiplex_cfg):
         ret += [slice_multiplex(multiplex_cfg, i)]
     return ret
 
-
 def make_powerset_cfgs(full_cfg):
     from itertools import chain, combinations
 
@@ -150,12 +151,49 @@ def make_powerset_cfgs(full_cfg):
 
         new_train["num_env"] = [myround(TOT_NUMBER_TRAIN_ENVS // len(ind)) for _ in new_train["num_env"]]
         OG_CFG["multienv"]["train"] = new_train
-        OG_CFG["multienv"]["eval"] = new_eval
+        OG_CFG["multienv"]["eval"] = gen_eval_gamut(new_eval) #new_eval
+
         OG_CFG["multienv"]["do_powerset_id"] = FULL_PW_IND.index(ind)
 
         new_cfg = omegaconf.OmegaConf.create(OG_CFG)
         LIST_OF_CFGS.append(new_cfg)
     return LIST_OF_CFGS
+
+def gen_eval_gamut(eval_cfgs):
+    final_eval_cfgs = []
+
+    dr_do_on_N_step = "20:80"
+    dr_do_on_reset = True
+    dr_do_at_creation = False
+
+    keys = None
+    for cur_eval_cfg in splat_multiplex(omegaconf.OmegaConf.create(eval_cfgs)):
+        keys = list(cur_eval_cfg.keys())
+
+        GET_LOW = cur_eval_cfg["dr_percent_below"]
+        GET_HIGH = cur_eval_cfg["dr_percent_above"]
+        assert GET_HIGH > 1.0
+
+        DR_PERCENTS = [(1., 1.), (GET_HIGH, GET_HIGH*2),  (GET_HIGH*1.499, GET_HIGH*1.5), (GET_LOW, GET_HIGH)]
+
+        for percents in DR_PERCENTS:
+            COPY = copy.deepcopy(cur_eval_cfg)
+
+            COPY["dr_do_on_N_steps"] = dr_do_on_N_step if not (percents[0] == percents[1] == 1.0) else 0
+            COPY["dr_do_on_reset"] = dr_do_on_reset if not (percents[0] == percents[1] == 1.0) else False
+            COPY["dr_do_at_creation"] = dr_do_at_creation if not (percents[0] == percents[1] == 1.0) else False
+            COPY["dr_percent_below"] = percents[0]
+            COPY["dr_percent_above"] = percents[1]
+
+            final_eval_cfgs += [COPY]
+
+    # now merge 'em
+    dico = {key: [] for key in keys}
+    for key in keys:
+        for final_eval_cfg in final_eval_cfgs:
+            dico[key].append(final_eval_cfg[key])
+
+    return dico
 
 
 def marshall_multienv_cfg(multienv_cfg):
@@ -177,12 +215,12 @@ def marshall_multienv_cfg(multienv_cfg):
                     val = list(map(lambda x: x.strip(), val))
                 else:
                     val = [val]
-            elif isinstance(val, int):
+            elif isinstance(val, int) or isinstance(val, float):
                 val = [val]
 
             VALID = True
             for x in val:
-                if isinstance(x, str) or isinstance(x, int):
+                if isinstance(x, str) or isinstance(x, int) or isinstance(x, float):
                     continue
                 else:
                     VALID = False
@@ -224,3 +262,39 @@ def marshall_multienv_cfg(multienv_cfg):
 
 def cfg_envkey_startswith(cfg, name):
     return cfg.env_key.startswith(name)
+
+
+def build_dr_dataclass(cfg):
+    DO_DR = True
+
+    if cfg.dr_percent_below == cfg.dr_percent_above == 1.0:
+        DO_DR = False
+
+    if (not cfg.dr_do_on_reset) and (not cfg.dr_do_on_N_step) and (not cfg.dr_do_at_creation):
+        DO_DR = False
+
+    if isinstance(cfg.dr_do_on_N_step, str):
+        do_on_N_step = tuple(list(map(int, map(lambda x: x.strip(), cfg.dr_do_on_N_step.split(":")))))
+        assert len(do_on_N_step) == 2
+    else:
+        assert isinstance(cfg.dr_do_on_N_step, int)
+        do_on_N_step = cfg.dr_do_on_N_step
+
+    return DR_Config(
+        DO_DR,
+        cfg.dr_percent_below,
+        cfg.dr_percent_above,
+        cfg.dr_do_on_reset,
+        do_on_N_step,
+        cfg.dr_do_at_creation
+    )
+
+
+@dataclasses.dataclass
+class DR_Config:
+    DO_DR: bool
+    percent_below: float
+    percent_above: float
+    do_on_reset: bool
+    do_on_N_step: Union[List, int]
+    do_at_creation: bool

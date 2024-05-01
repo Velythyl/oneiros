@@ -8,6 +8,7 @@ import wandb
 from torch.distributions.normal import Normal
 
 from src.algs.alg import _Alg
+from src.algs.get_nn_for_spaces import get_nets
 from src.utils.tiny_logger import TinyLogger
 
 
@@ -20,20 +21,27 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
-        self.critic = nn.Sequential(
+        self.critic = get_nets(envs.ONEIROS_METADATA.single_observation_space, (1,), for_actor=False)
+        """
+        nn.Sequential(
             layer_init(nn.Linear(np.array(envs.ONEIROS_METADATA.single_observation_space).prod(), 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 1), std=1.0),
-        )
-        self.actor_mean = nn.Sequential(
+        )"""
+
+        self.actor_mean = get_nets(envs.ONEIROS_METADATA.single_observation_space, envs.ONEIROS_METADATA.single_action_space, for_actor=True)
+        """
+        nn.Sequential(
             layer_init(nn.Linear(np.array(envs.ONEIROS_METADATA.single_observation_space).prod(), 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, 256)),
             nn.Tanh(),
             layer_init(nn.Linear(256, np.prod(envs.ONEIROS_METADATA.single_action_space)), std=0.01),
         )
+        """
+
         self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.ONEIROS_METADATA.single_action_space)))
 
     def get_value(self, x):
@@ -133,7 +141,7 @@ class PPO(_Alg):
                 single_global_step += 1
 
                 if (single_global_step % 200) == 0:
-                    print("\n\n\t\t~~RESAMPLED~~\n\n")
+                    print("\n\n\t\t~~200 GLOBAL STEPS~~\n\n")
                 logger.info(next_done, info, global_step=global_step)
 
             # bootstrap value if not done
@@ -241,4 +249,5 @@ class PPO(_Alg):
         wandb_logs["charts/sps"] = sps
         wandb_logs["charts/global_step"] = global_step
         print("sps:", sps)
+        print("global_step:", global_step)
         return wandb_logs

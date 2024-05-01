@@ -55,7 +55,7 @@ def do_exp(cfg):
         # entity=cfg.wandb.entity,
         project=cfg.wandb.project,
         name=f"{RUN_NAME}",  # todo
-        save_code=True,
+        save_code=False,
         settings=wandb.Settings(start_method="thread"),
         config=omegaconf.OmegaConf.to_container(
             cfg, resolve=True, throw_on_missing=True
@@ -78,7 +78,6 @@ def do_exp(cfg):
     elif cfg.rl.alg == "sac":
         agent = SAC(device=device, train_envs=train_envs, all_hooks=all_hooks, **(cfg.rl))
 
-
     agent.train()
 
     close_all_envs()
@@ -92,7 +91,9 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
 
+    print("Saving PD artifact")
     wandb.log_artifact(wandbcsv.get_pd_artifact())
+    print("Saving local PD")
     wandbcsv.finish()
     exit()
 

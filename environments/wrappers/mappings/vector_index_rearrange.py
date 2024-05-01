@@ -19,6 +19,9 @@ class VectorIndexMapWrapper(Wrapper):
             high=self.mapping.act2brax(self.action_space.high)
         )
 
+    def read_mass(self):
+        return self.mapping._read_mass(self.unwrapped)
+
     def reset(self, **kwargs):
         obs = super(VectorIndexMapWrapper, self).reset(**kwargs)
 
@@ -40,15 +43,18 @@ class _Mapping:
 
     act: dict = None    # mujo -> brax
     obs: dict = None    # mujo -> brax
+    body_mass: dict = None # mujo -> brax
     """
 
     def __init__(self,
                  obs: dict,
                  act: dict,
+                 mass: dict
                  ):
 
         self.act = act
         self.obs = obs
+        self.mass = mass
 
         def assert_dico(dico):
             keyset = set(dico.keys())
@@ -58,6 +64,7 @@ class _Mapping:
         obs2brax, act2brax = self.obs, self.act
         assert_dico(obs2brax)
         assert_dico(act2brax)
+        # DONT assert mass
 
         def invert_dico(dico):
             return {v: k for k, v in dico.items()}
@@ -79,6 +86,22 @@ class _Mapping:
         self._brax2obs = make_mapping_matrix(brax2obs)
         self._act2brax = make_mapping_matrix(act2brax)
         self._brax2act = make_mapping_matrix(brax2act)
+
+        def read_mass(env, return_contributors=False):
+            masses = np.zeros(len(self.mass))
+            contributors = [[] * len(self.mass)]
+            contributors_masses = [[] * len(self.mass)]
+            for mujo_key, brax_key in self.mass.items():
+                masses[brax_key] = masses[brax_key] + env.unwrapped.model.body_mass[mujo_key]
+                contributors[brax_key].append(mujo_key)
+                contributors_masses[brax_key].append(env.unwrapped.model.body_mass[mujo_key])
+
+            if return_contributors:
+                return masses, contributors, contributors_masses
+            else:
+                return masses
+
+        self._read_mass = read_mass
 
     def obs2brax(self, obs):
         return obs[self._obs2brax]
@@ -151,11 +174,28 @@ class Ant(_MujocoMapping):
         26: 26
     }
 
+    mass: dict = {
+        0: 0,
+        1: 1,
+        2: 1,
+        3: 2,
+        4: 3,
+        5: 1,
+        6: 4,
+        7: 5,
+        8: 1,
+        9: 6,
+        10: 7,
+        11: 1,
+        12: 8,
+        13: 9
+    }
+
 def map_func_lookup(parent_class, mujoco_name: str) -> _Mapping:
     get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
     mapping_class = get_mapping_class[mujoco_name]
-    mapping_class = mapping_class(mapping_class.obs, mapping_class.act)
+    mapping_class = mapping_class(mapping_class.obs, mapping_class.act, mapping_class.mass)
 
     return mapping_class
 

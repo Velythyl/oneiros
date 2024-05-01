@@ -1,8 +1,8 @@
 defaults:
   - env@train:
-    - ant-mujoco_mjx
+    - ant-with-small-dr
   - env@eval:
-    - ant-mujoco_mjx
+    - ant-with-small-dr
 
 device: cuda # falls back to cpu if needed no matter what
 
@@ -15,6 +15,7 @@ num_env: None
 max_episode_length: None
 action_repeat: None
 framestack: None
+mat_framestack_instead: None
 
 eval_freq: 10000000
 num_eval_steps: 500

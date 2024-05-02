@@ -5,7 +5,7 @@ from gym import Wrapper
 
 
 class MultiPlexEnv(Wrapper):
-    def __init__(self, env_list, device):
+    def __init__(self, env_list, device, unify_key_endswiths=[]):
         super().__init__(env_list[0])
         self.env_list = env_list
         self.env_list_len = len(env_list)
@@ -24,6 +24,8 @@ class MultiPlexEnv(Wrapper):
         self.env_map_to_name = []
         for env in self.env_list:
             self.env_map_to_name.append(env.ONEIROS_METADATA.env_key)
+
+        self.unify_key_endswiths = unify_key_endswiths
 
     @property
     def observation_space(self):
@@ -51,6 +53,7 @@ class MultiPlexEnv(Wrapper):
         done_s = []
         info_s = {}
 
+
         start = 0
         for i, stop in enumerate(range(self.num_envs_per_env, (1+self.env_list_len) * self.num_envs_per_env, self.num_envs_per_env)):
             acts = action[start:stop]
@@ -65,4 +68,18 @@ class MultiPlexEnv(Wrapper):
         obs_s = torch.concat(obs_s)
         rew_s = torch.concat(rew_s)
         done_s = torch.concat(done_s)
+
+        unified_keys = {k: [] for k in self.unify_key_endswiths}
+        for k, v in info_s.items():
+            for key in self.unify_key_endswiths:
+                if k.endswith(f"#{key}"):
+                    unified_keys[key].append(v)
+
+        final_unified_keys = {}
+        for k, v in unified_keys.items():
+            if len(v) == 0:
+                continue
+            final_unified_keys[k] = torch.concat(v)
+        info_s.update(final_unified_keys)
+
         return obs_s, rew_s, done_s, info_s

@@ -1,9 +1,12 @@
 import dataclasses
 import functools
 import gc
+import json
+import random
 from typing import Any, Tuple
 
 import jax.random
+import numpy as np
 from flax import struct
 import brax
 from brax.envs.wrappers.torch import TorchWrapper
@@ -86,9 +89,13 @@ def make_mujoco(mujoco_cfg, seed):
     }[BRAX_ENVNAME]
 
     class WritePrivilegedInformationWrapper(Wrapper):
+        def __init__(self, env):
+            super().__init__(env)
+            assert isinstance(env, VectorIndexMapWrapper)
+
         def step(self, action):
             ret = super(WritePrivilegedInformationWrapper, self).step(action)
-            ret[-1]["priv_info"] = self.unwrapped.model.body_mass
+            ret[-1]["priv"] = self.env.read_mass()
             return ret
 
     class SeededEnv(Wrapper):
@@ -106,10 +113,13 @@ def make_mujoco(mujoco_cfg, seed):
 
     dr_config = build_dr_dataclass(mujoco_cfg)
 
-    def thunk():
+    def thunk(seed):
+        np.random.seed(seed)
+        random.seed(seed)
+
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
         env = SeededEnv(env)
-        env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
+
 
         if dr_config.DO_DR:
             env = MujocoDomainRandomization(env,
@@ -120,14 +130,14 @@ def make_mujoco(mujoco_cfg, seed):
                                             do_on_N_step=dr_config.do_on_N_step
                                             )
 
+
+        env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         env = WritePrivilegedInformationWrapper(env)
 
         return env
 
     print("Pre async")
-
-    env = AsyncVectorEnv([thunk for _ in range(mujoco_cfg.num_env)], shared_memory=True, copy=False, context="fork")
-
+    env = AsyncVectorEnv([functools.partial(thunk, seed=seed+i) for i in range(mujoco_cfg.num_env)], shared_memory=True, copy=False, context="fork")
     print("Post async")
 
     class AsyncVectorEnvActuallyCloseWrapper(Wrapper):
@@ -163,6 +173,20 @@ class ONEIROS_METADATA:
     @property
     def env_key(self):
         return self.cfg.env_key
+
+def get_json_identifier(sliced_multiplex_env_cfg):
+    dico = dict(vars(sliced_multiplex_env_cfg))["_content"]
+    dico = {key: str(val) for key, val in dico.items()}
+    return json.dumps(dico).replace(" ", "")
+
+    prefix = envkey_multiplex(sliced_multiplex_env_cfg)
+    dr_config = dataclasses.asdict(build_dr_dataclass(sliced_multiplex_env_cfg))
+
+    dr_config["framestack"] = sliced_multiplex_env_cfg.framestack
+    dr_config["mat_framestack_instead"]
+
+    dr_config_json = json.dumps(dataclasses.asdict(dr_config))
+    prefix = f"{prefix} {dr_config_json}"
 
 
 def make_multiplex(multiplex_env_cfg, seed):
@@ -219,7 +243,11 @@ def make_multiplex(multiplex_env_cfg, seed):
         env = RecordEpisodeStatisticsTorch(env, device=multiplex_env_cfg.device[0],
                                            num_envs=slice_multiplex(multiplex_env_cfg, i).num_env)
         # TODO one prefix for each DR type...
-        env = InfoLogWrap(env, prefix=envkey_multiplex(slice_multiplex(multiplex_env_cfg, i)))
+        prefix = envkey_multiplex(slice_multiplex(multiplex_env_cfg, i))
+        dr_config = build_dr_dataclass(slice_multiplex(multiplex_env_cfg, i))
+        dr_config_json = json.dumps(dataclasses.asdict(dr_config))
+        prefix = f"{prefix} {get_json_identifier(slice_multiplex(multiplex_env_cfg, i))}"
+        env = InfoLogWrap(env, prefix=prefix)
 
         assert single_action_space(env) == PROTO_ACT
         assert single_observation_space(env) == PROTO_OBS
@@ -233,7 +261,26 @@ def make_multiplex(multiplex_env_cfg, seed):
         traverse_envstack(env, assigns)
         base_envs[i] = env
 
-    env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0])
+    env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0], ["priv"])
+
+    class UnifyPriv(Wrapper):
+        def step(self, action):
+            ret = super(UnifyPriv, self).step(action)
+
+            info = ret[-1]
+
+            priv_info = []
+            for k, v in info.items():
+                if k.endswith("priv"):
+
+                    if len(v.shape) == 1:
+                        new_v = []
+                        for _v in v:
+                            new_v.append(_v)
+
+
+                    priv_info.append(v)
+
 
     assert env.observation_space.shape[0] == PROTO_NUM_ENV * len(base_envs)
 

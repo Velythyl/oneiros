@@ -34,7 +34,30 @@ class Np2TorchWrapper(Wrapper):
     def step(self, action):
         action = torch2np(action)
         obs, rew, done, info = super(Np2TorchWrapper, self).step(action)
-        return np2torch(obs).to(self.device), np2torch(rew).to(self.device), np2torch(done).to(self.device).int(), info #dict2torch(info, self.device)
+
+        final_info = {}
+        for k, v in info.items():
+            if isinstance(v, np.ndarray):
+                try:
+                    if v.dtype == object:
+                        new_v = []
+                        non_none = None
+                        for _v in v:
+                            new_v.append(_v)
+                            if _v is not None:
+                                non_none = _v
+                        new_v2 = []
+                        for _v in new_v:
+                            if _v is None:
+                                _v = non_none * 0
+                            new_v2.append(_v)
+                        v = np.vstack(new_v2)
+                    v = np2torch(v).to(self.device)
+                except:
+                    pass
+            final_info[k] = v
+
+        return np2torch(obs).to(self.device), np2torch(rew).to(self.device), np2torch(done).to(self.device).int(), final_info #dict2torch(info, self.device)
 
 if __name__ == "__main__":
     np2torch

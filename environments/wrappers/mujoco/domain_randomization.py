@@ -48,6 +48,7 @@ class MujocoDomainRandomization(Wrapper):
     def do_dr(self):
         new_masses = self.sampler()
         self.env.unwrapped.model.body_mass = new_masses
+        print(new_masses)
 
     def reset(self, **kwargs):
         if self.do_at_creation and not self.done_at_creation:
@@ -65,7 +66,7 @@ class MujocoDomainRandomization(Wrapper):
         return ret
 
     def step(self, action):
-        if self.current_do_on_N_step is not None and self.step_count > 0 and (self.step_count % self.current_do_on_N_step) == 0:
+        if self.current_do_on_N_step is not None and self.current_do_on_N_step > 0 and self.step_count > 0 and (self.step_count % self.current_do_on_N_step) == 0:
             self.do_dr()
             self.step_count = 0
             self.current_do_on_N_step = self.do_on_N_step()

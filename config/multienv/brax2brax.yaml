@@ -1,12 +1,12 @@
 defaults:
   - env@train:
-    - ant-with-small-dr
+    - ant-with-dr
   - env@eval:
-    - ant-with-small-dr
+    - ant-with-dr
 
 device: cuda # falls back to cpu if needed no matter what
 
-do_powerset: True #True # if true, eval will be disabled and taken as the left-outs for every set in the powerset of the train envs
+do_powerset: False # False #True # if true, eval will be disabled and taken as the left-outs for every set in the powerset of the train envs
 min_powerset_len: None
 max_powerset_len: None
 do_powerset_id: None  # if non-None, will ONLY run this particular ID

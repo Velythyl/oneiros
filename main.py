@@ -60,8 +60,8 @@ def do_exp(cfg):
         config=omegaconf.OmegaConf.to_container(
             cfg, resolve=True, throw_on_missing=True
         ),
-        tags=TAGS
-        # mode="disabled"
+        tags=TAGS,
+        #mode="disabled"
     )
 
     device = cfg.multienv.device

@@ -87,19 +87,19 @@ class _Mapping:
         self._act2brax = make_mapping_matrix(act2brax)
         self._brax2act = make_mapping_matrix(brax2act)
 
-        def read_mass(env, return_contributors=False):
-            masses = np.zeros(len(self.mass))
-            contributors = [[] * len(self.mass)]
-            contributors_masses = [[] * len(self.mass)]
+        def read_mass(env):#, return_contributors=False):
+            masses = np.zeros(len(np.unique(np.array(list(self.mass.values())))))
+            #contributors = [[] for _ in range(len(self.mass)]
+            #contributors_masses = [[] * len(self.mass)]
             for mujo_key, brax_key in self.mass.items():
                 masses[brax_key] = masses[brax_key] + env.unwrapped.model.body_mass[mujo_key]
-                contributors[brax_key].append(mujo_key)
-                contributors_masses[brax_key].append(env.unwrapped.model.body_mass[mujo_key])
+            #    contributors[brax_key].append(mujo_key)
+            #    contributors_masses[brax_key].append(env.unwrapped.model.body_mass[mujo_key])
 
-            if return_contributors:
-                return masses, contributors, contributors_masses
-            else:
-                return masses
+            #if return_contributors:
+            #    return masses, contributors, contributors_masses
+            #else:
+            return masses
 
         self._read_mass = read_mass
 
@@ -118,8 +118,16 @@ class _Mapping:
 class _MujocoMapping(_Mapping):
     pass
 
+def gen_identity_dict(len):
+    return {k:k for k in range(len)}
 
 class Ant(_MujocoMapping):
+    #"""
+    act: dict = gen_identity_dict(8)
+    # https://wandb.ai/velythyl/oneiros_framestack_sweep/runs/pkmeeyi2?nw=nwuservelythyl
+    #"""
+
+    """
     act: dict = {
         0: 6,
         1: 7,
@@ -130,20 +138,12 @@ class Ant(_MujocoMapping):
         6: 4,
         7: 5
     }
+    # https://wandb.ai/velythyl/oneiros_framestack_sweep/runs/wuxc732q?nw=nwuservelythyl
+    #"""
 
-    """   
-        {
-        0: 6,
-        1: 7,
-        2: 0,
-        3: 1,
-        4: 2,
-        5: 3,
-        6: 4,
-        7: 5
-    }
+    obs: dict = gen_identity_dict(27)
+
     """
-
     obs: dict = {
         0: 0,
         1: 2,
@@ -173,6 +173,7 @@ class Ant(_MujocoMapping):
         25: 25,
         26: 26
     }
+    """
 
     mass: dict = {
         0: 0,

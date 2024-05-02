@@ -3,14 +3,23 @@ import functools
 import time
 from typing import Dict
 
+import brax as brax
 import gymnasium
 import jax
 import jax.numpy as jp
 import numpy as np
-
+import brax.envs
 
 
 if __name__ == "__main__":
+
+    mujoco = gymnasium.make("Ant-v4", max_episode_steps=1000, autoreset=True)
+    mujoco_obs = mujoco.reset()
+
+    brax = brax.envs.create("ant", backend="spring")
+    brax_obs = mujoco.reset()
+
+    stop = None
 
     def eval(func = lambda x: x):
         baselines = []

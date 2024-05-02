@@ -30,8 +30,9 @@ def envkey_tags_multienv(multienv_cfg):
     PREFIX_eval_envs = list(map(lambda name: f"eval-{name}", eval_envs))
 
     return PREFIX_train_envs + PREFIX_eval_envs + [f"eval num = {len(eval_envs)}", f"train num = {len(train_envs)}",
-                                                   f"envname {envname}", f"TRAIN {'-'.join(train_envs)}",
-                                                   f"EVAL {'-'.join(eval_envs)}"]
+                                                   f"envname {envname}", f"TRAIN {'-'.join(train_envs)}"]
+        #,
+        #                                           f"EVAL {'-'.join(eval_envs)}"]
 
 
 def envkey_runname_multienv(multienv_cfg):
@@ -55,7 +56,7 @@ def envkey_runname_multienv(multienv_cfg):
     train_envs = "-".join(list(map(envkey2shortkey, train_envs)))
     eval_envs = "-".join(list(map(envkey2shortkey, eval_envs)))
 
-    return f"{envname}_TRAIN_{train_envs}_EVAL_{eval_envs}"
+    return f"{envname}_TRAIN_{train_envs}" #_EVAL_{eval_envs}"
 
 
 def envkey_multiplex(multiplex_cfg):
@@ -172,14 +173,23 @@ def gen_eval_gamut(eval_cfgs):
 
         GET_LOW = cur_eval_cfg["dr_percent_below"]
         GET_HIGH = cur_eval_cfg["dr_percent_above"]
-        assert GET_HIGH > 1.0
 
-        DR_PERCENTS = [(1., 1.), (GET_HIGH, GET_HIGH*2),  (GET_HIGH*1.499, GET_HIGH*1.5), (GET_LOW, GET_HIGH)]
+        SET_LOW = 0.5
+        SET_HIGH = 10.
+        assert (GET_LOW == GET_HIGH == 1.0) or (GET_LOW == SET_LOW and GET_HIGH == SET_HIGH)
+
+        SCALE_HIGH = 2
+        SCALE_LOW = 0.01
+
+        # DR is assumed to be (0.5, 10.)
+        DR_PERCENTS = [(1., 1.), (SET_LOW, SET_HIGH)] # IN BOUND
+        DR_PERCENTS += [(SET_HIGH, 2*SET_HIGH),  ((SCALE_HIGH*SET_HIGH + SET_HIGH) / 2, (SCALE_HIGH* SET_HIGH + SET_HIGH) / 2 + 0.1)]   # OUTSIDE UP BOUND
+        DR_PERCENTS += [(SCALE_LOW * SET_LOW, SET_LOW), ((SET_LOW * SET_LOW+ SET_LOW) / 2, (SET_LOW * SET_LOW + SET_LOW) + 0.001)]   # OUTSIDE LOW BOUND
 
         for percents in DR_PERCENTS:
             COPY = copy.deepcopy(cur_eval_cfg)
 
-            COPY["dr_do_on_N_steps"] = dr_do_on_N_step if not (percents[0] == percents[1] == 1.0) else 0
+            COPY["dr_do_on_N_step"] = dr_do_on_N_step if not (percents[0] == percents[1] == 1.0) else 0
             COPY["dr_do_on_reset"] = dr_do_on_reset if not (percents[0] == percents[1] == 1.0) else False
             COPY["dr_do_at_creation"] = dr_do_at_creation if not (percents[0] == percents[1] == 1.0) else False
             COPY["dr_percent_below"] = percents[0]

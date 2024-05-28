@@ -1,0 +1,21 @@
+env_key:
+  - mujoco-ant
+  - braxgeneralized-ant
+  - braxpositional-ant
+  - braxspring-ant
+  - braxmjx-ant
+
+device: cuda
+num_env: 100
+max_episode_length: 1000
+last_action: True
+action_repeat: None  # todo
+
+#framestack: 0 # 10 #10 #8 # todo
+#mat_framestack_instead: False
+
+dr_percent_below: 0.5
+dr_percent_above: 10.0
+dr_do_on_reset: True
+dr_do_on_N_step: 5:50
+dr_do_at_creation: False

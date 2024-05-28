@@ -1,4 +1,16 @@
 defaults:
+  #- env: ant-no-dr
   - wandb: wandb
   - rl: ppo
+  - env_method: mat_framestack_rma
   - multienv: brax2brax
+  - env@train_env: ant-with-dr
+  - env@eval_env: ant-with-dr
+  - rl@ppo: ppo
+  - rl@sac: sac
+  - rl@rma: rma
+
+#hydra:
+#  sweeper:
+#    params:
+#      multienv.env@train: ant-no-dr,ant-with-dr

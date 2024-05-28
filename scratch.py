@@ -1,5 +1,7 @@
 import copy
 import functools
+import os
+import shutil
 import time
 from typing import Dict
 
@@ -12,6 +14,12 @@ import brax.envs
 
 
 if __name__ == "__main__":
+
+    try:
+        os.remove("mujoco-3.1.1-linux-x86_64.tar.gz")
+    except:
+        pass
+    exit()
 
     mujoco = gymnasium.make("Ant-v4", max_episode_steps=1000, autoreset=True)
     mujoco_obs = mujoco.reset()

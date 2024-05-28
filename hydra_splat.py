@@ -1,17 +1,23 @@
+import os
+import re
+import shutil
 import sys
+import uuid
 from io import StringIO
 
 import hydra
 import yaml
 
 
-@hydra.main(version_base=None, config_path="/tmp", config_name="spoofconf")
+@hydra.main(version_base=None, config_path="/tmp/hydra_splat", config_name="spoofconf")
 def main(cfg):
     pass
 
 
 def spoof_config():
     import sys
+
+    register_folders = []
 
     paths = []
     for arg in sys.argv:
@@ -20,6 +26,9 @@ def spoof_config():
 
             if "." in arg:
                 argpath = arg.split(".")
+            elif "@" in arg:
+                register_folders.append((arg.split("@")[0], arg.split("@")[1], default))
+                continue
             else:
                 argpath = [arg]
 
@@ -54,10 +63,25 @@ def spoof_config():
                 dfs(dico[key])
 
     dfs(spoof_dict)
-    # print(spoof_dict)
 
-    with open('/tmp/spoofconf.yaml', 'w') as outfile:
+    tmp_id = uuid.uuid4()
+    spoof_dict["hydra"] = {"sweeper": {"max_batch_size": 16}, "sweep": {"dir": f"/tmp/{tmp_id}"},
+                           "run": {"dir": f"/tmp/{tmp_id}"}}
+
+    os.makedirs("/tmp/hydra_splat", exist_ok=True)
+    for folder, key, default in register_folders:
+        spoof_dict["defaults"] = [{f"{folder}@{key}": default.split(",")[0]}]
+
+        os.makedirs(f"/tmp/hydra_splat/{folder}", exist_ok=True)
+
+        for defaul in default.split(","):
+            with open(f"/tmp/hydra_splat/{folder}/{defaul}.yaml", "w") as f:
+                f.write("temp: None")
+
+    with open('/tmp/hydra_splat/spoofconf.yaml', 'w') as outfile:
         yaml.dump(spoof_dict, outfile)
+
+    return tmp_id
 
 
 def parse_hydra_output(hydra_output):
@@ -66,6 +90,9 @@ def parse_hydra_output(hydra_output):
     dico = {}
     for line in lines:
         if line is None or len(line) == 0:
+            continue
+
+        if re.compile(r"Launching \d+ jobs locally").search(line):
             continue
 
         line = line.split("#")[-1]
@@ -85,7 +112,7 @@ if __name__ == '__main__':
     else:
         RUN_MODE = False
 
-    config = spoof_config()
+    tmp_id = spoof_config()
 
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
@@ -104,3 +131,8 @@ if __name__ == '__main__':
     DEBUG = False
     if DEBUG:
         print(hydra_output_multirun)
+
+    try:
+        shutil.rmtree(f"/tmp/{tmp_id}")
+    except:
+        pass

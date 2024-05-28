@@ -7,6 +7,7 @@ from typing import Any, Tuple
 
 import jax.random
 import numpy as np
+import torch
 from flax import struct
 import brax
 from brax.envs.wrappers.torch import TorchWrapper
@@ -24,6 +25,7 @@ from environments.wrappers.jax_wrappers.vectorgym import VectorGymWrapper
 from environments.wrappers.mujoco.domain_randomization import MujocoDomainRandomization
 from environments.wrappers.multiplex import MultiPlexEnv
 from environments.wrappers.np2torch import Np2TorchWrapper
+from environments.wrappers.pre_multienv.priv2torch import Priv2Torch
 from environments.wrappers.recordepisodestatisticstorch import RecordEpisodeStatisticsTorch
 from environments.wrappers.renderwrap import RenderWrap
 from environments.wrappers.mappings.vector_index_rearrange import VectorIndexMapWrapper, map_func_lookup, _MujocoMapping
@@ -49,8 +51,10 @@ def make_brax(brax_cfg, seed):
 
     if isinstance(dr_config.do_on_N_step, tuple):
         val = dr_config.do_on_N_step
+
         def sample_num(rng):
             return jax.random.uniform(rng, minval=val[0], maxval=val[1])
+
         dr_config = dataclasses.replace(dr_config, do_on_N_step=sample_num)
 
     if dr_config.DO_DR:
@@ -71,9 +75,6 @@ def make_brax(brax_cfg, seed):
     return env
 
 
-
-
-
 @monad_coerce
 def make_mujoco(mujoco_cfg, seed):
     if not cfg_envkey_startswith(mujoco_cfg, "mujoco"):
@@ -85,7 +86,13 @@ def make_mujoco(mujoco_cfg, seed):
     BRAX_ENVNAME = envkey_multiplex(mujoco_cfg).split("-")[-1]
 
     MUJOCO_ENVNAME = {
-        "ant": "Ant-v4"
+        "ant": "Ant-v4",
+        "hopper": "Hopper-v4",
+        "inverted_double_pendulum": "InvertedDoublePendulum-v4",
+        "inverted_pendulum": "InvertedPendulum-v4",
+        "pusher": "Pusher-v4",
+        "reacher": "Reacher-v4",
+        "walker2d": "Walker2d-v4"
     }[BRAX_ENVNAME]
 
     class WritePrivilegedInformationWrapper(Wrapper):
@@ -120,7 +127,6 @@ def make_mujoco(mujoco_cfg, seed):
         env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
         env = SeededEnv(env)
 
-
         if dr_config.DO_DR:
             env = MujocoDomainRandomization(env,
                                             percent_below=dr_config.percent_below,
@@ -130,14 +136,14 @@ def make_mujoco(mujoco_cfg, seed):
                                             do_on_N_step=dr_config.do_on_N_step
                                             )
 
-
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         env = WritePrivilegedInformationWrapper(env)
 
         return env
 
     print("Pre async")
-    env = AsyncVectorEnv([functools.partial(thunk, seed=seed+i) for i in range(mujoco_cfg.num_env)], shared_memory=True, copy=False, context="fork")
+    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i) for i in range(mujoco_cfg.num_env)],
+                         shared_memory=True, copy=False, context="fork")
     print("Post async")
 
     class AsyncVectorEnvActuallyCloseWrapper(Wrapper):
@@ -170,9 +176,12 @@ class ONEIROS_METADATA:
     multi_action_space: Tuple
     multi_observation_space: Tuple
 
+    priv_info_size: int
+
     @property
     def env_key(self):
         return self.cfg.env_key
+
 
 def get_json_identifier(sliced_multiplex_env_cfg):
     dico = dict(vars(sliced_multiplex_env_cfg))["_content"]
@@ -234,10 +243,10 @@ def make_multiplex(multiplex_env_cfg, seed):
     PROTO_OBS = single_observation_space(base_envs[0])
     PROTO_NUM_ENV = num_envs(base_envs[0])
 
+    def metadata_maker(cfg, num_env, priv_size):
+        return ONEIROS_METADATA(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS), priv_size)
 
-    def metadata_maker(cfg, num_env):
-        return ONEIROS_METADATA(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS))
-
+    PRIV_KEYS = []
     for i, env in enumerate(base_envs):
         env = RenderWrap(env)
         env = RecordEpisodeStatisticsTorch(env, device=multiplex_env_cfg.device[0],
@@ -253,38 +262,63 @@ def make_multiplex(multiplex_env_cfg, seed):
         assert single_observation_space(env) == PROTO_OBS
         assert num_envs(env) == PROTO_NUM_ENV
 
+        env.reset()
+        ret = env.step(action=torch.from_numpy(env.action_space.sample()))
+        priv_key = list(filter(lambda k: k.endswith("#priv"), list(ret[-1].keys())))
+        assert len(priv_key) == 1
+        priv_key = priv_key[0]
+        priv_size = ret[-1][priv_key].shape[-1]
+        PRIV_KEYS.append(priv_key)
+
+        env = Priv2Torch(env, priv_key, multiplex_env_cfg.device[0])
+
         def assigns(e):
-            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), PROTO_NUM_ENV)
+            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), PROTO_NUM_ENV, priv_size)
             bind(e, traverse_envstack)
             bind(e, get_envstack)
 
         traverse_envstack(env, assigns)
         base_envs[i] = env
 
-    env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0], ["priv"])
+    env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0], )  # ["priv"])
 
-    class UnifyPriv(Wrapper):
+    import gym
+    class GetPriv(gym.Wrapper):
+        def __init__(self, env):
+            super().__init__(env)
+
+            self.priv = torch.zeros(env.num_envs, priv_size).to(multiplex_env_cfg.device[0])
+
+        def get_priv(self):
+            return self.priv
+
+        def reset(self, **kwargs):
+            ret = super(GetPriv, self).reset()
+            self.priv.fill_(0)
+            return ret
+
         def step(self, action):
-            ret = super(UnifyPriv, self).step(action)
+            ret = super(GetPriv, self).step(action)
 
-            info = ret[-1]
+            idx = 0
+            jump_by = self.env.num_envs // len(PRIV_KEYS)
 
-            priv_info = []
-            for k, v in info.items():
-                if k.endswith("priv"):
+            self.priv[ret[-2].bool()] = 0  # set to 0 where reset
 
-                    if len(v.shape) == 1:
-                        new_v = []
-                        for _v in v:
-                            new_v.append(_v)
+            for priv_key in PRIV_KEYS:
+                if priv_key in PRIV_KEYS:
+                    self.priv[idx:idx + jump_by] = ret[-1][priv_key]
+                idx += jump_by
 
+            ret[-1]["priv"] = self.priv
 
-                    priv_info.append(v)
+            return ret
 
+    env = GetPriv(env)
 
     assert env.observation_space.shape[0] == PROTO_NUM_ENV * len(base_envs)
 
-    env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, PROTO_NUM_ENV * len(base_envs))
+    env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, PROTO_NUM_ENV * len(base_envs), priv_size)
 
     return env
 

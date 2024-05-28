@@ -1,4 +1,6 @@
+import brax
 import gymnasium
+import jax.random
 import numpy as np
 from gym import Wrapper
 
@@ -52,25 +54,13 @@ class _Mapping:
                  mass: dict
                  ):
 
-        self.act = act
-        self.obs = obs
-        self.mass = mass
-
         def assert_dico(dico):
             keyset = set(dico.keys())
             valset = set(dico.values())
             assert keyset == valset
 
-        obs2brax, act2brax = self.obs, self.act
-        assert_dico(obs2brax)
-        assert_dico(act2brax)
-        # DONT assert mass
-
         def invert_dico(dico):
             return {v: k for k, v in dico.items()}
-
-        brax2act = invert_dico(act2brax)
-        brax2obs = invert_dico(obs2brax)
 
         def make_mapping_matrix(dico):
             keyset = set(dico.keys())
@@ -82,37 +72,64 @@ class _Mapping:
 
             return mapping
 
-        self._obs2brax = make_mapping_matrix(obs2brax)
-        self._brax2obs = make_mapping_matrix(brax2obs)
-        self._act2brax = make_mapping_matrix(act2brax)
-        self._brax2act = make_mapping_matrix(brax2act)
+        self.act = act
+        self.obs = obs
+        self.mass = mass
 
-        def read_mass(env):#, return_contributors=False):
-            masses = np.zeros(len(np.unique(np.array(list(self.mass.values())))))
-            #contributors = [[] for _ in range(len(self.mass)]
-            #contributors_masses = [[] * len(self.mass)]
-            for mujo_key, brax_key in self.mass.items():
-                masses[brax_key] = masses[brax_key] + env.unwrapped.model.body_mass[mujo_key]
-            #    contributors[brax_key].append(mujo_key)
-            #    contributors_masses[brax_key].append(env.unwrapped.model.body_mass[mujo_key])
+        obs2brax, act2brax = self.obs, self.act
 
-            #if return_contributors:
-            #    return masses, contributors, contributors_masses
-            #else:
-            return masses
+        if act2brax is None:
+            self._act2brax = None
+            self._brax2act = None
+        else:
+            assert_dico(act2brax)
+
+            brax2act = invert_dico(act2brax)
+
+            self._brax2act = make_mapping_matrix(brax2act)
+            self._act2brax = make_mapping_matrix(act2brax)
+
+        if obs2brax is None:
+            self._obs2brax = None
+            self._brax2obs = None
+        else:
+            #assert_dico(obs2brax)
+
+            brax2obs = invert_dico(obs2brax)
+
+            self._brax2obs = make_mapping_matrix(brax2obs)
+            self._obs2brax = make_mapping_matrix(obs2brax)
+
+        if self.mass is None:
+            def read_mass(env):
+                return env.unwrapped.model.body_mass
+        else:
+            def read_mass(env):
+                masses = np.zeros(len(np.unique(np.array(list(self.mass.values())))))
+                for mujo_key, brax_key in self.mass.items():
+                    masses[brax_key] = masses[brax_key] + env.unwrapped.model.body_mass[mujo_key]
+                return masses
 
         self._read_mass = read_mass
 
     def obs2brax(self, obs):
+        if self._obs2brax is None:
+            return obs
         return obs[self._obs2brax]
 
     def act2brax(self, obs):
+        if self._act2brax is None:
+            return obs
         return obs[self._act2brax]
 
     def brax2act(self, obs):
+        if self._brax2act is None:
+            return obs
         return obs[self._brax2act]
 
     def brax2obs(self, obs):
+        if self._brax2obs is None:
+            return obs
         return obs[self._brax2obs]
 
 class _MujocoMapping(_Mapping):
@@ -122,58 +139,8 @@ def gen_identity_dict(len):
     return {k:k for k in range(len)}
 
 class Ant(_MujocoMapping):
-    #"""
-    act: dict = gen_identity_dict(8)
-    # https://wandb.ai/velythyl/oneiros_framestack_sweep/runs/pkmeeyi2?nw=nwuservelythyl
-    #"""
-
-    """
-    act: dict = {
-        0: 6,
-        1: 7,
-        2: 0,
-        3: 1,
-        4: 2,
-        5: 3,
-        6: 4,
-        7: 5
-    }
-    # https://wandb.ai/velythyl/oneiros_framestack_sweep/runs/wuxc732q?nw=nwuservelythyl
-    #"""
-
-    obs: dict = gen_identity_dict(27)
-
-    """
-    obs: dict = {
-        0: 0,
-        1: 2,
-        2: 3,
-        3: 4,
-        4: 1,
-        5: 5,
-        6: 6,
-        7: 7,
-        8: 8,
-        9: 9,
-        10: 10,
-        11: 11,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 15,
-        16: 16,
-        17: 17,
-        18: 18,
-        19: 19,
-        20: 20,
-        21: 21,
-        22: 22,
-        23: 23,
-        24: 24,
-        25: 25,
-        26: 26
-    }
-    """
+    act: dict = None
+    obs: dict = None
 
     mass: dict = {
         0: 0,
@@ -192,16 +159,91 @@ class Ant(_MujocoMapping):
         13: 9
     }
 
-def map_func_lookup(parent_class, mujoco_name: str) -> _Mapping:
+class Hopper(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
+class inverted_double_pendulum(_MujocoMapping):
+    act: dict = None
+    obs: dict = gen_identity_dict(8) # note: this throws away the last 3 obs of the mujoco env, which has 11 obs
+
+    mass: dict = None
+
+class inverted_pendulum(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
+"""
+this does not work, i think brax includes the ball mass in the body_mass and mujoco doesnt (since index 8 of brax is not found anywhere in mujoco, even when summing up indices appropriately)
+class Pusher(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = {
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 3,
+        5: 4,
+        6: 5,
+        7: 5,
+        8: 6,
+        9: 7,
+        10: 7,
+        11: 7, 12: 7    # these are both 0 in the mujoco mass, i.e. noop
+    }
+"""
+
+class Reacher(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = {
+        0: 0,
+        1:1,
+        2:2,
+        3:2,
+        4:3
+    }
+
+class Walker2d(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
+def map_func_lookup(parent_class, brax_envname: str) -> _Mapping:
     get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
-    mapping_class = get_mapping_class[mujoco_name]
+    mapping_class = get_mapping_class[brax_envname]
     mapping_class = mapping_class(mapping_class.obs, mapping_class.act, mapping_class.mass)
 
     return mapping_class
 
 
 if __name__ == "__main__":
+    # DONE: ant, hopper
+    # INCOMPAT: cheetah, humanoid, humanoidstandup
+    # BROKEN IN MUJOCO: swimmer
+
+    import brax
+    from brax.envs.wrappers.torch import TorchWrapper
+
+    mujoco = gymnasium.make("Pusher-v4", max_episode_steps=1000, autoreset=True)
+
+    brax_env = brax.envs.create(env_name="pusher", episode_length=1000, backend="generalized",
+                                batch_size=16, no_vsys=True)
+    state = brax_env.reset(jax.random.PRNGKey(0))
+    state = brax_env.step(state, jax.numpy.zeros((16, brax_env.action_size)))
+
+    mujoco_mass = mujoco.unwrapped.model.body_mass
+    brax_mass = state.sys.body_mass
+
     obs, act = map_func_lookup("ant")
 
     x = act(np.arange(8))

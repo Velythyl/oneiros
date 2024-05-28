@@ -1,8 +1,8 @@
-defaults:
-  - env@train:
-    - ant-with-dr
-  - env@eval:
-    - ant-with-dr
+#defaults:
+#  - env@train:
+#    - ant-with-dr
+#  - env@eval:
+#    - ant-with-dr
 
 device: cuda # falls back to cpu if needed no matter what
 

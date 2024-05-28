@@ -7,8 +7,8 @@ from environments.wrappers.multiplex import MultiPlexEnv
 def get_envstack(_env, aslist=False):
     def iter(env):
         def get_next(env):
-            if hasattr(env, "env"):
-                return env.env
+            if hasattr(env, "env") and hasattr(env, "brax_env"):
+                return env.brax_env
             if hasattr(env, "_env"):
                 return env._env
             return None

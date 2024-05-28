@@ -16,3 +16,4 @@ gymnasium
 git+https://github.com/Velythyl/brax.git@vsys
 mujoco==3.1.1
 mujoco-mjx==3.1.2
+pyarrow

@@ -2,6 +2,8 @@ import torch
 from plotly.offline import download_plotlyjs  # noqa
 from tqdm import tqdm
 
+from src.algs.rma import RMAAgent
+
 
 def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
 
@@ -10,7 +12,10 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
     next_obs = eval_envs.reset()
     for _ in tqdm(range(0, NUM_STEPS)): # todo this should match train_env's max ep len to some extent
         with torch.no_grad():
-            action = agent.get_action(next_obs)
+            if isinstance(agent, RMAAgent):
+                action = agent.get_action(next_obs, eval_envs.get_priv())
+            else:
+                action = agent.get_action(next_obs)
         next_obs, _, next_done, info = eval_envs.step(action)
 
         for key, val in info.items():

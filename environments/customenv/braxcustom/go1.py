@@ -221,7 +221,7 @@ if __name__ == "__main__":
     key = jax.random.PRNGKey(0)
     for i in tqdm(range(1000)):
         key, rng = jax.random.split(key)
-        state = step(state, jax.random.uniform(rng, shape=(1, env.action_size), minval=-1, maxval=1))
+        state = step(state, jax.random.uniform(rng, shape=(env.action_size,), minval=-1, maxval=1))
         traj.append(state.pipeline_state)
 
     frames = render_array(state.sys, traj)

@@ -128,7 +128,7 @@ if __name__ == '__main__':
     else:
         print(len(hydra_output_multirun))
 
-    DEBUG = False
+    DEBUG = True
     if DEBUG:
         print(hydra_output_multirun)
 

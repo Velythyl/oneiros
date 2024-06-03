@@ -217,6 +217,12 @@ class Walker2d(_MujocoMapping):
 
     mass: dict = None
 
+class Go1(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
 def map_func_lookup(parent_class, brax_envname: str) -> _Mapping:
     get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}

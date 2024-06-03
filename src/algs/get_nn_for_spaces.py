@@ -129,9 +129,7 @@ def get_1dcnn_mlp(inp, out, for_actor=True):
             assert self.final_layer(self.hardcoded_backbone(input)).shape == (100, OUTPUT_SHAPE)
 
         def forward(self, input):
-            def transpose(inp):
-                return inp.T
-            input = torch.vmap(transpose)(input)
+            input = input.transpose(1, 2)
 
             conv = self.hardcoded_backbone(input)
             return self.final_layer(conv)

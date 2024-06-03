@@ -36,6 +36,7 @@ from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
 
+CUSTOM_ENVS = ["go1"]
 
 @monad_coerce
 def make_brax(brax_cfg, seed):
@@ -44,6 +45,9 @@ def make_brax(brax_cfg, seed):
 
     BACKEND = envkey_multiplex(brax_cfg).split("-")[0].replace("brax", "")
     ENVNAME = envkey_multiplex(brax_cfg).split("-")[1]
+
+    if ENVNAME in CUSTOM_ENVS:
+        from environments.customenv.braxcustom.go1 import Go1 # noqa
 
     dr_config = build_dr_dataclass(brax_cfg)
     env = brax.envs.create(env_name=ENVNAME, episode_length=brax_cfg.max_episode_length, backend=BACKEND,
@@ -92,8 +96,12 @@ def make_mujoco(mujoco_cfg, seed):
         "inverted_pendulum": "InvertedPendulum-v4",
         "pusher": "Pusher-v4",
         "reacher": "Reacher-v4",
-        "walker2d": "Walker2d-v4"
+        "walker2d": "Walker2d-v4",
+        "go1": "Go1"
     }[BRAX_ENVNAME]
+
+    if BRAX_ENVNAME in CUSTOM_ENVS:
+        from environments.customenv.mujococustom.go1 import Go1Env # noqa
 
     class WritePrivilegedInformationWrapper(Wrapper):
         def __init__(self, env):

@@ -1,3 +1,5 @@
+
+import gymnasium
 import numpy as np
 from etils import epath
 
@@ -5,6 +7,8 @@ from gymnasium import utils
 from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 from tqdm import tqdm
+
+import environments.customenv.mujococustom.go1
 
 DEFAULT_CAMERA_CONFIG = {
     "distance": 4.0,
@@ -18,7 +22,7 @@ class Go1Env(MujocoEnv, utils.EzPickle):
             "rgb_array",
             "depth_array",
         ],
-        "render_fps": 20,
+        "render_fps": 100,
     }
 
     def __init__(
@@ -34,7 +38,7 @@ class Go1Env(MujocoEnv, utils.EzPickle):
         exclude_current_positions_from_observation=True,
         **kwargs,
     ):
-        xml_file = epath.resource_path('environments') / 'customenv/mujococustom/assets/unitree_go1/go1.xml'
+        xml_file = str(epath.resource_path('environments') / 'customenv/mujococustom/assets/unitree_go1/go1.xml')
         utils.EzPickle.__init__(
             self,
             xml_file,
@@ -67,11 +71,7 @@ class Go1Env(MujocoEnv, utils.EzPickle):
             exclude_current_positions_from_observation
         )
 
-        obs_shape = 27
-        if not exclude_current_positions_from_observation:
-            obs_shape += 2
-        if use_contact_forces:
-            obs_shape += 84
+        obs_shape = 35
 
         observation_space = Box(
             low=-np.inf, high=np.inf, shape=(obs_shape,), dtype=np.float64
@@ -124,9 +124,9 @@ class Go1Env(MujocoEnv, utils.EzPickle):
         return terminated
 
     def step(self, action):
-        xy_position_before = self.get_body_com("torso")[:2].copy()
+        xy_position_before = self.get_body_com("trunk")[:2].copy()
         self.do_simulation(action, self.frame_skip)
-        xy_position_after = self.get_body_com("torso")[:2].copy()
+        xy_position_after = self.get_body_com("trunk")[:2].copy()
 
         xy_velocity = (xy_position_after - xy_position_before) / self.dt
         x_velocity, y_velocity = xy_velocity
@@ -167,14 +167,9 @@ class Go1Env(MujocoEnv, utils.EzPickle):
         position = self.data.qpos.flat.copy()
         velocity = self.data.qvel.flat.copy()
 
-        if self._exclude_current_positions_from_observation:
-            position = position[2:]
+        position = position[2:]
 
-        if self._use_contact_forces:
-            contact_force = self.contact_forces.flat.copy()
-            return np.concatenate((position, velocity, contact_force))
-        else:
-            return np.concatenate((position, velocity))
+        return np.concatenate((position, velocity))
 
     def reset_model(self):
         noise_low = -self._reset_noise_scale
@@ -194,13 +189,27 @@ class Go1Env(MujocoEnv, utils.EzPickle):
         return observation
 
 
+gymnasium.register("Go1", "environments.customenv.mujococustom.go1:Go1Env")
+
 if __name__ == "__main__":
 
-    env = Go1Env()
+    env = gymnasium.make("Go1")
+    env.unwrapped.render_mode = "rgb_array"
 
+    frames = []
     state = env.reset()
     for i in tqdm(range(1000)):
         state = env.step(env.action_space.sample())
-        env.render()
+        frames += [env.render()]
+
+    from PIL import Image
+    frames = [Image.fromarray(arr) for arr in frames]
+    frames[0].save(
+        "/tmp/go1_mujoco.gif",
+        append_images=frames[1:],
+        save_all=True,
+        duration=env.dt * 1000,
+        # fps=30,
+        loop=0)
 
     x=0

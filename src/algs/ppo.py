@@ -88,6 +88,10 @@ class PPO(_Alg):
         self.max_grad_norm = max_grad_norm
         self.target_kl = target_kl
 
+    def save(self, path):
+        model_scripted = torch.jit.script(self.agent)  # Export to TorchScript
+        model_scripted.save(f'{path}/model_scripted.pt')  # Save
+
     def _update(self, obs, actions, logprobs, rewards, dones, values, advantages):
         pass
 

@@ -162,14 +162,16 @@ class Go1(PipelineEnv):
     qpos = pipeline_state.q
     qvel = pipeline_state.qd
 
-    if self._exclude_current_positions_from_observation:
-      qpos = pipeline_state.q[2:]
+    #if self._exclude_current_positions_from_observation:
+    qpos = pipeline_state.q[2:]
 
     return jp.concatenate([qpos] + [qvel])
 
 
 def register(name, clazz):
     brax.envs._envs[name] = clazz
+
+register("go1", Go1)
 
 
 def render(
@@ -212,8 +214,8 @@ def render(
 if __name__ == "__main__":
     register("go1", Go1)
 
-    env = brax.envs.create(env_name="go1", episode_length=1000, backend="positional",
-                           batch_size=None, no_vsys=True)
+    env = brax.envs.create(env_name="go1", episode_length=1000, backend="spring",
+                           batch_size=1, no_vsys=True)
 
     state = env.reset(jax.random.PRNGKey(0))
     traj = []
@@ -221,13 +223,14 @@ if __name__ == "__main__":
     key = jax.random.PRNGKey(0)
     for i in tqdm(range(1000)):
         key, rng = jax.random.split(key)
-        state = step(state, jax.random.uniform(rng, shape=(env.action_size,), minval=-1, maxval=1))
+        state = step(state, jax.random.uniform(rng, shape=(1,env.action_size,), minval=-1, maxval=1))
+        #print(state.reward)
         traj.append(state.pipeline_state)
 
-    frames = render_array(state.sys, traj)
+    frames = render_array(state.sys, traj, camera="tracking")
     frames = [Image.fromarray(arr) for arr in frames]
     frames[0].save(
-        "/tmp/go1.gif",
+        "/tmp/go1_brax.gif",
         append_images=frames[1:],
         save_all=True,
         duration=state.sys.dt * 1000,

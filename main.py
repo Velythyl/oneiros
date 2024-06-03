@@ -107,6 +107,8 @@ def do_exp(cfg):
 
     logging.info("==========Trainning Completed==========")
 
+    agent.save(wandb.run.dir)
+
     print("Saving PD artifact")
     wandb.log_artifact(wandbcsv.get_pd_artifact())
     print("Saving local PD")

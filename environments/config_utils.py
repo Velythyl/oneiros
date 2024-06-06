@@ -182,9 +182,9 @@ def gen_eval_gamut(eval_cfgs):
         SCALE_LOW = 0.01
 
         # DR is assumed to be (0.5, 10.)
-        DR_PERCENTS = [(1., 1.), (SET_LOW, SET_HIGH)] # IN BOUND
-        DR_PERCENTS += [(SET_HIGH, 2*SET_HIGH),  ((SCALE_HIGH*SET_HIGH + SET_HIGH) / 2, (SCALE_HIGH* SET_HIGH + SET_HIGH) / 2 + 0.1)]   # OUTSIDE UP BOUND
-        DR_PERCENTS += [(SCALE_LOW * SET_LOW, SET_LOW), ((SCALE_LOW * SET_LOW+ SET_LOW) / 2, (SCALE_LOW * SET_LOW + SET_LOW) / 2 + 0.001)]   # OUTSIDE LOW BOUND
+        DR_PERCENTS = [(SET_LOW, SET_HIGH)] # IN BOUND
+        #DR_PERCENTS += [(SET_HIGH, 2*SET_HIGH),  ((SCALE_HIGH*SET_HIGH + SET_HIGH) / 2, (SCALE_HIGH* SET_HIGH + SET_HIGH) / 2 + 0.1)]   # OUTSIDE UP BOUND
+        #ZDR_PERCENTS += [(SCALE_LOW * SET_LOW, SET_LOW), ((SCALE_LOW * SET_LOW+ SET_LOW) / 2, (SCALE_LOW * SET_LOW + SET_LOW) / 2 + 0.001)]   # OUTSIDE LOW BOUND
 
         for percents in DR_PERCENTS:
             COPY = copy.deepcopy(cur_eval_cfg)

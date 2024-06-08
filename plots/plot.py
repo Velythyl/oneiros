@@ -148,7 +148,7 @@ def get_pd(run_dir):
         method = "RMA (PPO)"
     else:
         if method is None:
-            method = f"({str(config.rl.alg).upper()})"
+            method = f"{str(config.rl.alg).upper()}"
         else:
             method = f"{method} ({str(config.rl.alg).upper()})"
 
@@ -278,7 +278,27 @@ def rename_rew_cols(frame):
     return frame.rename(columns=renames)
 
 
-def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
+def filter_df(df):  # todo fixme make flag
+    # List of substrings to search for
+    substrings = ["LOW", "MID", "HIGH"]
+
+    # Filter columns containing any of the substrings
+    cols_with_substrings = [col for col in df.columns if any(sub in col for sub in substrings)]
+
+    # Further filter to keep only columns that contain "MID D"
+    filtered_cols = [col for col in cols_with_substrings if "MID D" in col]
+
+    # Combine filtered columns with other columns
+    final_cols = [col for col in df.columns if col not in cols_with_substrings] + filtered_cols
+
+    # Create a new DataFrame with the selected columns
+    filtered_df = df[final_cols]
+
+    filtered_df.columns = filtered_df.columns.str.replace('  MID D', '')
+
+    return filtered_df
+
+def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ONLY_TRAIN=False, FIVE_GRID=False):
     big_df = get_concatdf_for_env(DIR, ENV)
 
     POSSIBLE_KEYS = [STATICS.KEY_TRAIN_ENVS, STATICS.KEY_NUM_TRAIN_ENVS]
@@ -331,6 +351,9 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
 
         avg_runs = sort_heatmap_trainenvs(avg_runs)
 
+    if ONLY_TRAIN:
+        assert DEDUP
+        assert KEY == STATICS.KEY_NUM_TRAIN_ENVS
 
     if DEDUP:
 
@@ -354,10 +377,13 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
                 for val in value:
                     if val in col:
                         FOUND_VAL = True
-                mask_row.append(FOUND_VAL)
+                mask_row.append(FOUND_VAL * (not ONLY_TRAIN))
 
 
             mask[i, :] = mask_row #[value.split(" (")[0] in col for col in avg_runs.columns]
+
+        #if ONLY_TRAIN:
+        #    mask = ~mask
 
         avg_runs = avg_runs.mask(mask)
 
@@ -375,6 +401,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
         avg_runs[KEY] = col_num_envs
 
         avg_runs = avg_runs.drop(STATICS.KEY_TRAIN_ENVS, axis=1)
+
 
     KEY_MAP = {
         STATICS.KEY_TRAIN_ENVS: "Training environment",
@@ -445,7 +472,15 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
         avg_runs = cleanup_evalenvs(avg_runs)
         avg_runs = rename_rew_cols(avg_runs)
 
-        fig, ax = plt.subplots(figsize=(20,20))
+
+
+        avg_runs = filter_df(avg_runs)
+
+        if FIVE_GRID:
+            avg_runs = avg_runs[~avg_runs.index.str.contains('\,')]
+
+
+        fig, ax = plt.subplots(figsize=(20,20) if not FIVE_GRID else (5,5))
         ax.figure.tight_layout()
         #cmap = vapeplot.cmap('jazzcup')
         #cmap = seaborn.color_palette("coolwarm", as_cmap=True)
@@ -498,45 +533,82 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True):
 
         ax.set_title(title)
         ax.set_xlabel("Evaluation simulator")
-        ax.set_ylabel("Training simulator(s)")
+        ax.set_ylabel(f"Training simulator{'(s)' if not FIVE_GRID else ''}")
         #ax.subplots_adjust(bottom=4)
         plt.subplots_adjust(left=0.2, right=0.8, top=0.9, bottom=0.3)
 
-        os.makedirs(f"saved_plots/{KEY}/dedups/", exist_ok=True)
-        os.makedirs(f"saved_plots/{KEY}/raws/", exist_ok=True)
+        os.makedirs(f"saved_plots/{ENV}/{KEY}/dedups/", exist_ok=True)
+        os.makedirs(f"saved_plots/{ENV}/{KEY}/raws/", exist_ok=True)
         if DEDUP:
-            plt.savefig(f"saved_plots/{KEY}/dedups/isagg_{AGG_METHOD}_{title}.png", dpi=900, bbox_inches='tight')
+            plt.savefig(f"saved_plots/{ENV}/{KEY}/dedups/isagg_{AGG_METHOD}_isfivegrid_{FIVE_GRID}_{title}.pdf", dpi=900, bbox_inches='tight')
         else:
-            plt.savefig(f"saved_plots/{KEY}/raws/isagg_{AGG_METHOD}_{title}.png", dpi=900, bbox_inches='tight')
+            plt.savefig(f"saved_plots/{ENV}/{KEY}/raws/isagg_{AGG_METHOD}_isfivegrid_{FIVE_GRID}_{title}.pdf", dpi=900, bbox_inches='tight')
 
         #plt.savefig(f"saved_plots/{title}.pdf", dpi=900, bbox_inches='tight')
         plt.close(fig)
         #plt.show()
         x=0
 
+
+    if FIVE_GRID:
+        assert AGG_METHOD
+
     if do_plots:
         if AGG_METHOD:
             do_this_one = avg_runs.copy()
-            do_this_one = do_this_one.drop(STATICS.KEY_METHOD, axis=1)
-            #do_this_one = avg_runs.groupby(STATICS.KEY_TRAIN_ENVS).mean()
 
-            if KEY == STATICS.KEY_TRAIN_ENVS:
-                title = f"{ENV}: Simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
-            elif KEY == STATICS.KEY_NUM_TRAIN_ENVS:
-                title = f"{ENV}: Aggregated simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
+            WITH_DR = do_this_one.loc[do_this_one[STATICS.KEY_METHOD].str.contains("WITH DR")]
+            WITHOUT_DR = do_this_one.loc[do_this_one[STATICS.KEY_METHOD].str.contains("WITHOUT DR")]
 
-            do_heatmapp(do_this_one, title=title)
+            for do_this_one, STRING in zip([WITH_DR, WITHOUT_DR], ["with DR", "without DR"]):
+                do_this_one = do_this_one.drop(STATICS.KEY_METHOD, axis=1)
+                do_this_one = do_this_one.groupby(KEY, sort=False).mean().reset_index()
+
+                if KEY == STATICS.KEY_TRAIN_ENVS:
+                    if DEDUP:
+                        if FIVE_GRID:
+                            title = f" {ENV} ({STRING}): Transferability to test simulators"
+                        else:
+                            title = f"{ENV} ({STRING}): Transfer to test simulators"
+                    else:
+                        if FIVE_GRID:
+                            title = f" {ENV} ({STRING}): Transferability of simulators"
+                        else:
+                            title = f"{ENV} ({STRING}): Transfer to all simulators"
+
+                    #title = f"{ENV}: Performance on held out Simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
+                elif KEY == STATICS.KEY_NUM_TRAIN_ENVS:
+                    assert FIVE_GRID == False
+                    if DEDUP:
+                        title = f"{ENV}: Performance {STRING} on held out simulators (test set)"
+                    else:
+                        title = f"{ENV}: Performance {STRING} on all simulators (train & test set)"
+
+                    #title = f"{ENV}: Aggregated simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
+
+                do_heatmapp(do_this_one, title=title)
         else:
             for method in tqdm(avg_runs[STATICS.KEY_METHOD].unique(), desc=f"Heatmaps KEY={KEY}, DEDUP={DEDUP}, AGG={AGG_METHOD}"):
                 do_this_one = avg_runs[avg_runs[STATICS.KEY_METHOD] == method]
                 do_this_one = do_this_one.drop(STATICS.KEY_METHOD, axis=1)
                 if KEY == STATICS.KEY_TRAIN_ENVS:
-                    title = f"{ENV}: {method}'s simulator transfer " + ("(raw)" if not DEDUP else "(dedup)")
+                    if DEDUP:
+                        title = f"{ENV}: ({method}) Performance per simulator on held out simulators (test set)"
+                    else:
+                        title = f"{ENV}: ({method}) Performance per simulator  on all simulators (train & test set)"
+
+                    #title = f"{ENV}: {method}'s simulator transfer " + ("(raw)" if not DEDUP else "(dedup)")
                 elif KEY == STATICS.KEY_NUM_TRAIN_ENVS:
-                    title = f"{ENV}: {method}'s aggregated simulator transfer " + ("(raw)" if not DEDUP else "(dedup)")
+                    if DEDUP:
+                        title = f"{ENV}: ({method}) Performance on held out simulators (test set)"
+                    else:
+                        title = f"{ENV}: ({method}) Performance on all simulators (train & test set)"
+
+                    #title = f"{ENV}: {method}'s aggregated simulator transfer " + ("(raw)" if not DEDUP else "(dedup)")
                 do_heatmapp(do_this_one, title=title)
 
-    return avg_runs
+    avg_runs = avg_runs[[KEY, STATICS.KEY_METHOD, *get_totrew_cols(avg_runs)]]
+    return cleanup_evalenvs(avg_runs)
 
 def make_manyeval_linechart(DIR, DEDUP):
     avg_runs = make_heatmap(DIR, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=DEDUP)
@@ -574,13 +646,135 @@ def make_avgeval_linechart(DIR, DEDUP):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
 
-def make_avgeval_allavg_linechart(DIR,ENV, DEDUP):
-    avg_runs = make_heatmap(DIR, ENV,KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=DEDUP, do_plots=False)
 
-    avg_runs = avg_runs[[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD, *get_totrew_cols(avg_runs)]]
+def make_linechart_per_sim(DIR,ENV, DEDUP, DO_LEGEND):
+    avg_runs = make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=DEDUP, do_plots=False)
 
-    avg_runs = pandas.melt(avg_runs, id_vars=[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD], value_vars=get_totrew_cols(avg_runs), var_name='Original_Column', value_name="NEW_COL")
+   # avg_runs = avg_runs[[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD, *get_totrew_cols(avg_runs)]]
+
+
+
+    avg_runs = filter_df(avg_runs)
+
+    avg_runs = pandas.melt(avg_runs, id_vars=[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD], value_vars=set(avg_runs.columns) - set([STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD]), var_name='Original_Column', value_name="NEW_COL")
+
+    DONES = set()
+    for method in avg_runs["METHOD"].unique():
+        if method in DONES:
+            continue
+
+        method = method.split(";")[-1].strip().split("(")[0].strip()
+        DONES.add(method)
+        do_this_one = avg_runs[avg_runs["METHOD"].str.contains(method)]
+
+        WITH_DR = do_this_one[avg_runs["METHOD"].str.contains('WITH DR')]
+        WITHOUT_DR = do_this_one[avg_runs["METHOD"].str.contains('WITHOUT DR')]
+
+        pal = vapeplot.palette("vaporwave")
+        pal = [pal[0], pal[len(pal) // 4], pal[3 * (len(pal) //4)], pal[-1]]
+
+        mallsoft = vapeplot.palette("mallsoft")
+
+
+        fig, ax = plt.subplots()
+
+        pal = {
+            "(WITHOUT DR); Vector Framestack (PPO)": pal[0],
+            "Vector Framestack (PPO)": pal[0],
+            "(WITHOUT DR); RMA (PPO)": pal[1],
+            "RMA (PPO)": pal[1],
+            "(WITHOUT DR); Matrix Framestack (PPO)": pal[2],
+            "Matrix Framestack (PPO)": pal[2],
+            "(WITHOUT DR); PPO": pal[3],
+            "PPO": pal[3],
+            "BP ": mallsoft[0],
+            "BS ": mallsoft[1],
+            "BM ": mallsoft[2],
+            "BG ": mallsoft[3],
+            "M  ": mallsoft[5]
+
+        }
+
+        seaborn.lineplot(WITHOUT_DR,
+                         x=STATICS.KEY_NUM_TRAIN_ENVS,
+                         y="NEW_COL",
+                         ax=ax,
+                         hue="Original_Column",
+                         palette=pal,#vapeplot.palette("avanti"),
+                         linestyle="dashed",
+                         legend=False
+                         )
+
+        #WITH_DR["METHOD"] = WITH_DR["METHOD"].apply(lambda m: m.split("; ")[-1])
+        full_line_lineplot = seaborn.lineplot(WITH_DR,
+                         x=STATICS.KEY_NUM_TRAIN_ENVS,
+                         y="NEW_COL",
+                         ax=ax,
+                         hue="Original_Column",
+                         palette=pal,#vapeplot.palette("avanti"),
+                         #linestyle="dashed"
+                        legend=DO_LEGEND
+                         )
+        #full_line_lineplot.legend(
+        #    list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
+        #)
+        #full_line_lineplot.get_legend_handles_labels()
+
+        if DO_LEGEND:
+            # Get existing handles and labels from the legend
+            handles, labels = ax.get_legend_handles_labels()
+
+            # Create custom legend entries
+            custom_lines = [
+                plt.Line2D([0], [0], color='black', lw=2, linestyle='-', label='With DR'),
+                plt.Line2D([0], [0], color='black', lw=2, linestyle='--', label='Without DR')
+            ]
+
+            # Add custom entries to handles and labels
+            handles.extend(custom_lines)
+            labels.extend(['With DR', 'Without DR'])
+
+            # Update legend with new handles and labels
+            ax.legend(handles, labels)
+
+
+        #handles = full_line_lineplot.get_legend_handles_labels()
+        #new_handles = [handles[0][4:], handles[1][4:]]
+
+        #if DEDUP and not ONLY_TRAIN:
+        #    title = f"{ENV}: Performance on held out simulators (test set)"
+        #elif DEDUP and ONLY_TRAIN:
+        #    title = f"{ENV}: Performance on training simulators (train set)"
+        #else:
+        #    title = f"{ENV}: Performance on all simulators (train & test set)"
+
+
+        title = f"{ENV}: Impact of training {method} in more simulators"
+        ax.set_title(title)
+        ax.set_xlabel(f"Number of training simulators" )
+        ax.set_ylabel("Average total evaluation reward")
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        #labels = list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
+        #plt.legend(title='Method', loc='upper left', labels=labels, handles=new_handles[0])
+
+        os.makedirs(f"saved_plots/{ENV}/line_per_sim", exist_ok=True)
+        plt.savefig(f"saved_plots/{ENV}/line_per_sim/{title}_legend{DO_LEGEND}.pdf")
+
+        plt.close(fig) #plt.show()
+
+
+def make_avgeval_allavg_linechart(DIR,ENV, DEDUP, ONLY_TRAIN, DO_LEGEND):
+    avg_runs = make_heatmap(DIR, ENV,KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=DEDUP, do_plots=False, ONLY_TRAIN=ONLY_TRAIN)
+
+    #avg_runs = avg_runs[[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD, *get_totrew_cols(avg_runs)]]
+
+    avg_runs = pandas.melt(avg_runs, id_vars=[STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD], value_vars=set(avg_runs.columns) - set([STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD]), var_name='Original_Column', value_name="NEW_COL")
     avg_runs = avg_runs.drop('Original_Column', axis=1)
+
+
+    avg_runs = filter_df(avg_runs)
+
 
     #avg_runs = avg_runs.groupby([STATICS.KEY_NUM_TRAIN_ENVS, STATICS.KEY_METHOD]).mean()
     #avg_runs = avg_runs.mean(axis=1).reset_index()
@@ -594,15 +788,29 @@ def make_avgeval_allavg_linechart(DIR,ENV, DEDUP):
     pal = [pal[0], pal[len(pal) // 4], pal[3 * (len(pal) //4)], pal[-1]]
 
     fig, ax = plt.subplots()
+
+    pal = {
+        "(WITHOUT DR); Vector Framestack (PPO)": pal[0],
+        "Vector Framestack (PPO)": pal[0],
+        "(WITHOUT DR); RMA (PPO)": pal[1],
+        "RMA (PPO)": pal[1],
+        "(WITHOUT DR); Matrix Framestack (PPO)": pal[2],
+        "Matrix Framestack (PPO)": pal[2],
+        "(WITHOUT DR); PPO": pal[3],
+        "PPO": pal[3],
+    }
+
     seaborn.lineplot(WITHOUT_DR,
                      x=STATICS.KEY_NUM_TRAIN_ENVS,
                      y="NEW_COL",
                      ax=ax,
                      hue=STATICS.KEY_METHOD,
                      palette=pal,#vapeplot.palette("avanti"),
-                     linestyle="dashed"
+                     linestyle="dashed",
+                     legend=False
                      )
 
+    WITH_DR["METHOD"] = WITH_DR["METHOD"].apply(lambda m: m.split("; ")[-1])
     full_line_lineplot = seaborn.lineplot(WITH_DR,
                      x=STATICS.KEY_NUM_TRAIN_ENVS,
                      y="NEW_COL",
@@ -610,21 +818,53 @@ def make_avgeval_allavg_linechart(DIR,ENV, DEDUP):
                      hue=STATICS.KEY_METHOD,
                      palette=pal,#vapeplot.palette("avanti"),
                      #linestyle="dashed"
+                    legend=DO_LEGEND
                      )
+    #full_line_lineplot.legend(
+    #    list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
+    #)
     #full_line_lineplot.get_legend_handles_labels()
-    handles = full_line_lineplot.get_legend_handles_labels()
-    new_handles = [handles[0][4:], handles[1][4:]]
+
+    if DO_LEGEND:
+        # Get existing handles and labels from the legend
+        handles, labels = ax.get_legend_handles_labels()
+
+        # Create custom legend entries
+        custom_lines = [
+            plt.Line2D([0], [0], color='black', lw=2, linestyle='-', label='With DR'),
+            plt.Line2D([0], [0], color='black', lw=2, linestyle='--', label='Without DR')
+        ]
+
+        # Add custom entries to handles and labels
+        handles.extend(custom_lines)
+        labels.extend(['With DR', 'Without DR'])
+
+        # Update legend with new handles and labels
+        ax.legend(handles, labels)
 
 
-    title = f"{ENV}: Aggregated simulator transfer "+ ("(raw)" if not DEDUP else "(dedup)")
+    #handles = full_line_lineplot.get_legend_handles_labels()
+    #new_handles = [handles[0][4:], handles[1][4:]]
+
+    if DEDUP and not ONLY_TRAIN:
+        title = f"{ENV}: Performance on held out simulators (test set)"
+    elif DEDUP and ONLY_TRAIN:
+        title = f"{ENV}: Performance on training simulators (train set)"
+    else:
+        title = f"{ENV}: Performance on all simulators (train & test set)"
+
+
+    #title = f"{ENV}: Aggregated simulator transfer "+ ("(raw)" if not DEDUP else "(dedup)")
     ax.set_title(title)
     ax.set_xlabel(f"Number of training simulators" )
     ax.set_ylabel("Average total evaluation reward")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    labels = list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
-    plt.legend(title='Method', loc='upper left', labels=labels, handles=new_handles[0])
 
-    plt.savefig(f"saved_plots/{title}.png")
+    #labels = list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
+    #plt.legend(title='Method', loc='upper left', labels=labels, handles=new_handles[0])
+
+    os.makedirs(f"saved_plots/{ENV}", exist_ok=True)
+    plt.savefig(f"saved_plots/{ENV}/{title}_legend{DO_LEGEND}.pdf")
 
     plt.close(fig) #plt.show()
 
@@ -637,26 +877,66 @@ if __name__ == "__main__":
     #prep_env_checkpoints(DIR)
     #exit()
 
+    DID_ONE_LEGEND = False
+
+    ant = make_heatmap(DIR, "ant", KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, do_plots=False)
+    walker = make_heatmap(DIR, "walker2d", KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, do_plots=False)
+
+   # ant = ant.drop(columns="METHOD", axis=1)
+   #walker = walker.drop(columns="METHOD", axis=1)
+
+    ant_vector = ant[ant.METHOD.str.contains("Vector")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+    walker_vector = walker[walker.METHOD.str.contains("Vector")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+
+    ant_matrix = ant[ant.METHOD.str.contains("Matrix")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+    walker_matrix = walker[walker.METHOD.str.contains("Matrix")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+
+    ant_rma = ant[ant.METHOD.str.contains("RMA")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+    walker_rma = walker[walker.METHOD.str.contains("RMA")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+
+    ant_ppo = ant[ant.METHOD.str.contains("\; PPO")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+    walker_ppo = walker[walker.METHOD.str.contains("\; PPO")].drop(columns="METHOD", axis=1).groupby("TRAIN_ENVS").mean()
+
+    MISSING_VECTOR = set(ant_vector.index) - set(walker_vector.index)
+
+    MISSING_MATRIX = set(ant_matrix.index) - set(walker_matrix.index)
+
+    MISSING_PPO = set(ant_ppo.index) - set(walker_ppo.index)
+
+    MISSING_RMA = set(ant_rma.index) - set(walker_rma.index)
+
+
+    DO_ENVS = ["ant", "walker"]
+
     for ENV in ENVNAMES:
-        if "ant" not in ENV:    # todo rm
+        FOUND = False
+        for DO_IT in DO_ENVS:
+            if DO_IT in ENV:
+                FOUND = True
+                break
+        if not FOUND:
             continue
 
         df = get_concatdf_for_env(DIR, ENV)
         if df is False:
             continue
 
-        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=False)
-        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True)
 
 
+        #make_avgeval_allavg_linechart(DIR, ENV, DEDUP=False, ONLY_TRAIN=False)
+
+       # exit()
+        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
+        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, FIVE_GRID=True)
+        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False)
         make_heatmap(DIR,ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True)
 
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
+
 
         make_heatmap(DIR,ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True)
+
 
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
@@ -670,6 +950,13 @@ if __name__ == "__main__":
        # make_avgeval_linechart(DIR, DEDUP=False)
         #make_avgeval_linechart(DIR, DEDUP=True)
 
+        make_linechart_per_sim(DIR, ENV, DEDUP=True, DO_LEGEND=True)
+        make_linechart_per_sim(DIR, ENV, DEDUP=True, DO_LEGEND=False)
 
+        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=False, DO_LEGEND=True)
+        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=True, DO_LEGEND=True)
+        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=False, DO_LEGEND=False)
+        make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=True, DO_LEGEND=False)
+        # exit()
 
     exit()

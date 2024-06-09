@@ -314,7 +314,7 @@ def make_multiplex(multiplex_env_cfg, seed):
             self.priv[ret[-2].bool()] = 0  # set to 0 where reset
 
             for priv_key in PRIV_KEYS:
-                if priv_key in PRIV_KEYS:
+                if priv_key in ret[-1]:
                     self.priv[idx:idx + jump_by] = ret[-1][priv_key]
                 idx += jump_by
 

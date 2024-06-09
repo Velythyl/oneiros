@@ -9,6 +9,7 @@ defaults:
   - rl@ppo: ppo
   - rl@sac: sac
   - rl@rma: rma
+  - ccdb: ccdb
 
 #hydra:
 #  sweeper:

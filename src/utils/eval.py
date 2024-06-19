@@ -1,4 +1,5 @@
 import torch
+import wandb
 from plotly.offline import download_plotlyjs  # noqa
 from tqdm import tqdm
 
@@ -9,7 +10,15 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
 
     collected_infos = {}
 
+
+    def render(env):
+        return env.render()[0][0]
+
+    frame_list = []
+
     next_obs = eval_envs.reset()
+    frame_list.append(render(eval_envs))
+
     for _ in tqdm(range(0, NUM_STEPS)): # todo this should match train_env's max ep len to some extent
         with torch.no_grad():
             if isinstance(agent, RMAAgent):
@@ -24,6 +33,8 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
             else:
                 collected_infos[key] = [val]
 
+        frame_list.append(render(eval_envs))
+
     wandb_logs = {}
 
     for key in collected_infos.keys():
@@ -36,13 +47,14 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
             wandb_logs[f"EVAL_{_key}/tot_rew"] = torch.sum(collected_rews)
             wandb_logs[f"EVAL_{_key}/ep_len"] = collected_rews.shape[0]
 
+    assert eval_envs.ONEIROS_METADATA.prefix != "MULTIPLEX"
 
-        # make_plot
-        #wandb_logs[key] = np.array(collected_infos[key]).mean()
-        #if "mbrma/meanparticle" in key:
-        #    wandb_logs[f"EVAL_EP/{key}"] = make_mbrma_plot(key, log_yscale=False)
-        #if "mbrma/fitness" in key:
-            #wandb_logs[f"EVAL_EP/{key}"] = make_mbrma_plot(key, False)
-        #if key.endswith("#rew"):
+    FPS = 30
+    import cv2
+    SHAPE = frame_list[0].shape
+    out = cv2.VideoWriter(f'{wandb.run.dir}/{nsteps}_{eval_envs.ONEIROS_METADATA.prefix}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), FPS, (SHAPE[1], SHAPE[0]))
+    for frame in frame_list:
+        out.write(frame)
+    out.release()
 
     return wandb_logs

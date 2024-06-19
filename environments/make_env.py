@@ -12,6 +12,7 @@ from flax import struct
 import brax
 from brax.envs.wrappers.torch import TorchWrapper
 from gymnasium import Wrapper
+from gymnasium.core import RenderFrame
 from gymnasium.vector import AsyncVectorEnv
 from tqdm import tqdm
 
@@ -126,13 +127,20 @@ def make_mujoco(mujoco_cfg, seed):
             self._seed = new_seed
             return ret
 
+    class NoRenderWhenNone(Wrapper):
+        def render(self):
+            if self.render_mode is None or self.render_mode == "none":
+                return None #np.zeros((self.width, self.height,3))
+            else:
+                return self.env.render()
+
     dr_config = build_dr_dataclass(mujoco_cfg)
 
-    def thunk(seed):
+    def thunk(seed, render_mode):
         np.random.seed(seed)
         random.seed(seed)
 
-        env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True)
+        env = gymnasium.make(MUJOCO_ENVNAME, max_episode_steps=mujoco_cfg.max_episode_length, autoreset=True, render_mode=render_mode)
         env = SeededEnv(env)
 
         if dr_config.DO_DR:
@@ -147,16 +155,23 @@ def make_mujoco(mujoco_cfg, seed):
         env = VectorIndexMapWrapper(env, map_func_lookup(_MujocoMapping, BRAX_ENVNAME))
         env = WritePrivilegedInformationWrapper(env)
 
+        env = NoRenderWhenNone(env)
         return env
 
     print("Pre async")
-    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i) for i in range(mujoco_cfg.num_env)],
+    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i, render_mode="rgb_array" if i ==0 else "none") for i in range(mujoco_cfg.num_env)],
                          shared_memory=True, copy=False, context="fork")
     print("Post async")
 
     class AsyncVectorEnvActuallyCloseWrapper(Wrapper):
         def close(self):
             return self.env.close(terminate=True)
+
+        def render(self, *args, **kwargs):
+            ret = self.env.call_async("render")
+            ret = self.env.call_wait()
+            return ret
+
 
     env = AsyncVectorEnvActuallyCloseWrapper(env)
 
@@ -169,14 +184,21 @@ def make_mujoco(mujoco_cfg, seed):
     env = NoResetInfoWrapper(env)
     env = Np2TorchWrapper(env, mujoco_cfg.device)
 
+    class MujocoRenderWrapper(Wrapper):
+        def render(self, **kwargs):
+            return self.env.render()
+    env = MujocoRenderWrapper(env)
+
     print(f"Mujoco env built: {envkey_multiplex(mujoco_cfg)}")
 
     return env
 
 
-@struct.dataclass
+@dataclasses.dataclass
 class ONEIROS_METADATA:
     cfg: Any
+
+    prefix: str
 
     single_action_space: Tuple
     single_observation_space: Tuple
@@ -251,8 +273,8 @@ def make_multiplex(multiplex_env_cfg, seed):
     PROTO_OBS = single_observation_space(base_envs[0])
     PROTO_NUM_ENV = num_envs(base_envs[0])
 
-    def metadata_maker(cfg, num_env, priv_size):
-        return ONEIROS_METADATA(cfg, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS), priv_size)
+    def metadata_maker(cfg, prefix, num_env, priv_size):
+        return ONEIROS_METADATA(cfg, prefix, PROTO_ACT, PROTO_OBS, (num_env, *PROTO_ACT), (num_env, *PROTO_OBS), priv_size)
 
     PRIV_KEYS = []
     for i, env in enumerate(base_envs):
@@ -280,8 +302,10 @@ def make_multiplex(multiplex_env_cfg, seed):
 
         env = Priv2Torch(env, priv_key, multiplex_env_cfg.device[0])
 
+        METADATA_PREFIX = f"{envkey_multiplex(slice_multiplex(multiplex_env_cfg, i))} L{slice_multiplex(multiplex_env_cfg, i).dr_percent_below} H{slice_multiplex(multiplex_env_cfg, i).dr_percent_above}"
+        METADATA_PREFIX = METADATA_PREFIX.replace(".", ",")
         def assigns(e):
-            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), PROTO_NUM_ENV, priv_size)
+            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), METADATA_PREFIX, PROTO_NUM_ENV, priv_size)
             bind(e, traverse_envstack)
             bind(e, get_envstack)
 
@@ -326,7 +350,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 
     assert env.observation_space.shape[0] == PROTO_NUM_ENV * len(base_envs)
 
-    env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, PROTO_NUM_ENV * len(base_envs), priv_size)
+    env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, "MULTIPLEX" if len(base_envs) > 1 else base_envs[0].ONEIROS_METADATA.prefix, PROTO_NUM_ENV * len(base_envs), priv_size)
 
     return env
 

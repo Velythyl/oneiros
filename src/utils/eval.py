@@ -12,6 +12,7 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
 
 
     def render(env):
+        return
         return env.render()[0][0]
 
     frame_list = []
@@ -49,12 +50,13 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
 
     assert eval_envs.ONEIROS_METADATA.prefix != "MULTIPLEX"
 
-    FPS = 30
-    import cv2
-    SHAPE = frame_list[0].shape
-    out = cv2.VideoWriter(f'{wandb.run.dir}/{nsteps}_{eval_envs.ONEIROS_METADATA.prefix}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), FPS, (SHAPE[1], SHAPE[0]))
-    for frame in frame_list:
-        out.write(frame)
-    out.release()
+    if False:
+        FPS = 30
+        import cv2
+        SHAPE = frame_list[0].shape
+        out = cv2.VideoWriter(f'{wandb.run.dir}/{nsteps}_{eval_envs.ONEIROS_METADATA.prefix}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), FPS, (SHAPE[1], SHAPE[0]))
+        for frame in frame_list:
+            out.write(frame)
+        out.release()
 
     return wandb_logs

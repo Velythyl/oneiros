@@ -129,7 +129,7 @@ def make_mujoco(mujoco_cfg, seed):
 
     class NoRenderWhenNone(Wrapper):
         def render(self):
-            if self.render_mode is None or self.render_mode == "none":
+            if self.render_mode != "rgb_array":
                 return None #np.zeros((self.width, self.height,3))
             else:
                 return self.env.render()
@@ -159,7 +159,7 @@ def make_mujoco(mujoco_cfg, seed):
         return env
 
     print("Pre async")
-    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i, render_mode="rgb_array" if i ==0 else "none") for i in range(mujoco_cfg.num_env)],
+    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i, render_mode="rgb_array" if i ==0 else "human") for i in range(mujoco_cfg.num_env)],
                          shared_memory=True, copy=False, context="fork")
     print("Post async")
 

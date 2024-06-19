@@ -159,7 +159,7 @@ def make_mujoco(mujoco_cfg, seed):
         return env
 
     print("Pre async")
-    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i, render_mode="rgb_array" if i ==0 else "human") for i in range(mujoco_cfg.num_env)],
+    env = AsyncVectorEnv([functools.partial(thunk, seed=seed + i, render_mode="rgb_array" if i ==0 else "depth_array") for i in range(mujoco_cfg.num_env)],
                          shared_memory=True, copy=False, context="fork")
     print("Post async")
 

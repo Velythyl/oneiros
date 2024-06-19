@@ -134,10 +134,9 @@ class Go1Env(MujocoEnv, utils.EzPickle):
         forward_reward = x_velocity
         healthy_reward = self.healthy_reward
 
-        forward_reward = forward_reward * 0 # TODO FIXME RM THIS LATER, THIS IS JUST TO DEBUG!
-        rewards = forward_reward + healthy_reward
+        rewards = (forward_reward * 0) + healthy_reward # TODO FIXME RM THIS LATER, THIS IS JUST TO DEBUG!
 
-        costs = ctrl_cost = self.control_cost(action)
+        costs = ctrl_cost = (self.control_cost(action) + abs(forward_reward))  # TODO FIXME RM THIS LATER, THIS IS JUST TO DEBUG!
 
         terminated = self.terminated
         observation = self._get_obs()

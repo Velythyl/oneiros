@@ -227,6 +227,9 @@ if __name__ == "__main__":
         #print(state.reward)
         traj.append(state.pipeline_state)
 
+    def render_from_state(sys, pipeline_state):
+        frame = render_array([pipeline_state])
+
     frames = render_array(state.sys, traj, camera="tracking")
     frames = [Image.fromarray(arr) for arr in frames]
     frames[0].save(

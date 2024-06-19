@@ -1,12 +1,12 @@
 env_key:
-  #- mujoco-go1
+  - mujoco-go1
   #- braxgeneralized-go1
   #- braxpositional-go1
-  - braxspring-go1
+  #- braxspring-go1
   #- braxmjx-go1
 
 device: cuda
-num_env: 100
+num_env: 4 #100
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo

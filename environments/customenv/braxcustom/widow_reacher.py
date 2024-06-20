@@ -217,6 +217,8 @@ class WidowReacher(PipelineEnv):
     theta = pipeline_state.q[:-3]   # robot state
 
     target_pos = pipeline_state.x.pos[-3:]  # target state
+
+    # fixme what is this x.take(1) even doing? why not just theta.q[-6:-3]?
     tip_pos = (
         pipeline_state.x.take(1)
         .do(base.Transform.create(pos=jp.array([0.11, 0, 0])))

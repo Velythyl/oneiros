@@ -176,22 +176,22 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             self.goal = self.np_random.uniform(low=-0.2, high=0.2, size=2)
             if np.linalg.norm(self.goal) < 0.2:
                 break
-        qpos[-2:] = self.goal
+        qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv
         )
-        qvel[-2:] = 0
+        qvel[-3:] = 0
         self.set_state(qpos, qvel)
         return self._get_obs()
 
     def _get_obs(self):
-        theta = self.data.qpos.flat[:2]
+        theta = self.data.qpos.flat[:-3]    # this gets everything up until the target
         return np.concatenate(
             [
-                np.cos(theta),
+                np.cos(theta),  # fixme we probably want to output raw qpos values and not cos and sin
                 np.sin(theta),
-                self.data.qpos.flat[-2:],
-                self.data.qvel.flat[:2],
+                self.data.qpos.flat[-3:],
+                self.data.qvel.flat[:2],    # todo fixme this one is wrong
                 self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target"),
             ]
         )

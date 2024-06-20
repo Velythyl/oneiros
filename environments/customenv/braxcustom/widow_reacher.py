@@ -183,8 +183,8 @@ class WidowReacher(PipelineEnv):
 
     # set the target q, qd
     _, target = self._random_target(rng)
-    q = q.at[-2:].set(target)
-    qd = qd.at[-2:].set(0)
+    q = q.at[-3:].set(target)
+    qd = qd.at[-3:].set(0)
 
     pipeline_state = self.pipeline_init(sys, q, qd)
 
@@ -201,7 +201,7 @@ class WidowReacher(PipelineEnv):
     obs = self._get_obs(pipeline_state)
 
     # vector from tip to target is last 3 entries of obs vector
-    reward_dist = -math.safe_norm(obs[-3:])
+    reward_dist = -math.safe_norm(obs[-3:]) # charlie todo fixme
     reward_ctrl = -jp.square(action).sum()
     reward = reward_dist + reward_ctrl
 
@@ -214,8 +214,9 @@ class WidowReacher(PipelineEnv):
 
   def _get_obs(self, pipeline_state: base.State) -> jax.Array:
     """Returns egocentric observation of target and arm body."""
-    theta = pipeline_state.q[:-2]
-    target_pos = pipeline_state.x.pos[-2]
+    theta = pipeline_state.q[:-3]   # robot state
+
+    target_pos = pipeline_state.x.pos[-3:]  # target state
     tip_pos = (
         pipeline_state.x.take(1)
         .do(base.Transform.create(pos=jp.array([0.11, 0, 0])))
@@ -231,10 +232,10 @@ class WidowReacher(PipelineEnv):
     tip_to_target = tip_pos - target_pos
 
     return jp.concatenate([
-        jp.cos(theta),
+        jp.cos(theta),  # # fixme we probably want to output raw qpos values and not cos and sin
         jp.sin(theta),
-        pipeline_state.q[2:],  # target x, y
-        tip_vel[:2],
+        pipeline_state.q[-3:],  # target x, y
+        tip_vel,
         tip_to_target,
     ])
 

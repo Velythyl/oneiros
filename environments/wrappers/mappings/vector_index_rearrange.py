@@ -5,6 +5,7 @@ import numpy as np
 from gym import Wrapper
 
 
+
 class VectorIndexMapWrapper(Wrapper):
     def __init__(self, env, mapping):
         super(VectorIndexMapWrapper, self).__init__(env)
@@ -223,6 +224,12 @@ class Go1(_MujocoMapping):
 
     mass: dict = None
 
+class Widow(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
 def map_func_lookup(parent_class, brax_envname: str) -> _Mapping:
     get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
@@ -240,12 +247,20 @@ if __name__ == "__main__":
     import brax
     from brax.envs.wrappers.torch import TorchWrapper
 
-    mujoco = gymnasium.make("Pusher-v4", max_episode_steps=1000, autoreset=True)
+    from environments.customenv.braxcustom.widow_reacher import WidowReacher
+    from environments.customenv.mujococustom.widow_reacher import WidowReacher
 
-    brax_env = brax.envs.create(env_name="pusher", episode_length=1000, backend="generalized",
-                                batch_size=16, no_vsys=True)
-    state = brax_env.reset(jax.random.PRNGKey(0))
-    state = brax_env.step(state, jax.numpy.zeros((16, brax_env.action_size)))
+
+
+    mujoco = gymnasium.make("Widow", max_episode_steps=1000, autoreset=True)
+
+    brax_env = brax.envs.create(env_name="widow", episode_length=1000, backend="generalized",
+                                batch_size=2, no_vsys=True)
+
+    reset = jax.jit(brax_env.reset)
+    step = jax.jit(brax_env.step)
+    state = reset(jax.random.PRNGKey(0))
+    #state = step(state, jax.numpy.zeros((2, brax_env.action_size)))
 
     mujoco_mass = mujoco.unwrapped.model.body_mass
     brax_mass = state.sys.body_mass

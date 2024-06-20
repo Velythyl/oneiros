@@ -128,13 +128,17 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             "rgb_array",
             "depth_array",
         ],
-        "render_fps": 50,
+        "render_fps": 250,
     }
 
     def __init__(self, **kwargs):
-        utils.EzPickle.__init__(self, **kwargs)
-        observation_space = Box(low=-np.inf, high=np.inf, shape=(11,), dtype=np.float64)
         xml_file  = str(epath.resource_path('environments') / 'customenv/mujococustom/assets/trossen_wx250s/wx250s.xml')
+        utils.EzPickle.__init__(self,
+            xml_file=xml_file,
+                                **kwargs)
+
+
+        observation_space = Box(low=-np.inf, high=np.inf, shape=(11,), dtype=np.float64)
         MujocoEnv.__init__(
             self,
             xml_file,
@@ -186,9 +190,9 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             [
                 np.cos(theta),
                 np.sin(theta),
-                self.data.qpos.flat[2:],
+                self.data.qpos.flat[-2:],
                 self.data.qvel.flat[:2],
-                self.get_body_com("fingertip") - self.get_body_com("target"),
+                self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target"),
             ]
         )
 

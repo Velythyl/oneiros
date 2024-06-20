@@ -1,7 +1,9 @@
 <mujoco model="wx250s">
-  <compiler angle="radian" meshdir="assets" texturedir="assets" autolimits="true"/>
+  <compiler angle="radian" meshdir="simplifiedassets" texturedir="simplifiedassets" autolimits="true"/>
 
+  <!--
   <option integrator="implicitfast" cone="elliptic" impratio="10"/>
+  -->
 
   <asset>
     <texture type="2d" file="interbotix_black.png"/>
@@ -14,16 +16,21 @@
     <mesh file="wx250s_5_lower_forearm.stl" class="wx250s"/>
     <mesh file="wx250s_6_wrist.stl" class="wx250s"/>
     <mesh file="wx250s_7_gripper.stl" class="wx250s"/>
+    <!--<mesh file="wx250s_7_gripper.stl" class="wx250s"/>-->
     <mesh file="wx250s_8_gripper_prop.stl" class="wx250s"/>
     <mesh file="wx250s_9_gripper_bar.stl" class="wx250s"/>
     <mesh file="wx250s_10_gripper_finger.stl" class="wx250s"/>
+
+    <texture builtin="checker" height="100" name="texplane" rgb1="0 0 0" rgb2="0.8 0.8 0.8" type="2d" width="100"/>
+    <material name="MatPlane" reflectance="0.5" shininess="1" specular="1" texrepeat="60 60" texture="texplane"/>
   </asset>
 
   <default>
     <default class="wx250s">
       <mesh scale="0.001 0.001 0.001"/>
-      <joint axis="0 1 0" frictionloss="0.1" armature="0.1"/>
-      <position kp="50" inheritrange="1" dampratio="0.95" forcerange="-35 35"/>
+      <!--<joint axis="0 1 0" frictionloss="0.1" armature="0.1"/>-->
+      <joint axis="0 1 0"  armature="0.1"/>
+      <position kp="50" inheritrange="1"  forcerange="-35 35"/> <!-- dampratio="0.95" -->
       <default class="visual">
         <geom type="mesh" contype="0" conaffinity="0" density="0" group="2" material="black"/>
       </default>
@@ -38,9 +45,17 @@
 
   <worldbody>
     <light mode="targetbodycom" target="wx250s/gripper_link" pos="1 0 1"/>
+    <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane"/>
+    <!-- Arena -->
+		<geom conaffinity="0" contype="0" name="ground" pos="0 0 0" size="1 1 10" type="plane"/>
+		<geom conaffinity="0" fromto="-.3 -.3 .01 .3 -.3 .01" name="sideS" size=".02" type="capsule"/>
+		<geom conaffinity="0" fromto=" .3 -.3 .01 .3  .3 .01" name="sideE" size=".02" type="capsule"/>
+		<geom conaffinity="0" fromto="-.3  .3 .01 .3  .3 .01" name="sideN" size=".02" type="capsule"/>
+		<geom conaffinity="0" fromto="-.3 -.3 .01 -.3 .3 .01" name="sideW" size=".02" type="capsule"/>
     <body name="wx250s/base_link" childclass="wx250s">
       <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="0.538736"
         diaginertia="0.00252518 0.00211519 0.000690737"/>
+      <freejoint/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="collision"/>
       <body name="wx250s/shoulder_link" pos="0 0 0.072">
@@ -106,11 +121,20 @@
         </body>
       </body>
     </body>
+    <!-- Target -->
+		<body name="target" pos="0 0 0.01">
+			<!-- The joint `ref` attributes are removed for brax. -->
+			<joint armature="0" axis="1 0 0" damping="0" limited="true" name="target_x" pos="0 0 0" range="-.27 .27" stiffness="0" type="slide"/>
+			<joint armature="0" axis="0 1 0" damping="0" limited="true" name="target_y" pos="0 0 0" range="-.27 .27" stiffness="0" type="slide"/>
+			<geom conaffinity="0" contype="0" name="target" pos="0 0 0" size=".009" type="sphere"/>
+		</body>
   </worldbody>
 
+  <!--
   <contact>
     <exclude body1="wx250s/base_link" body2="wx250s/shoulder_link"/>
   </contact>
+  -->
 
   <equality>
     <joint joint1="left_finger" joint2="right_finger" polycoef="0 -1 0 0 0"/>
@@ -125,8 +149,4 @@
     <position class="wx250s" name="wrist_rotate" joint="wrist_rotate"/>
     <position class="wx250s" name="gripper" joint="left_finger" kp="200"/>
   </actuator>
-
-  <keyframe>
-    <key name="home" qpos="0 -0.96 1.16 0 -0.3 0 0.015 -0.015" ctrl="0 -0.96 1.16 0 -0.3 0 0.015"/>
-  </keyframe>
 </mujoco>

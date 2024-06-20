@@ -155,7 +155,7 @@ class WidowReacher(PipelineEnv):
 
 
   def __init__(self, backend='generalized', **kwargs):
-    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/unitree_go1/go1_visual.xml'
+    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s.xml'
     sys = mjcf.load(path)
 
     n_frames = 2
@@ -183,8 +183,8 @@ class WidowReacher(PipelineEnv):
 
     # set the target q, qd
     _, target = self._random_target(rng)
-    q = q.at[2:].set(target)
-    qd = qd.at[2:].set(0)
+    q = q.at[-2:].set(target)
+    qd = qd.at[-2:].set(0)
 
     pipeline_state = self.pipeline_init(sys, q, qd)
 
@@ -214,8 +214,8 @@ class WidowReacher(PipelineEnv):
 
   def _get_obs(self, pipeline_state: base.State) -> jax.Array:
     """Returns egocentric observation of target and arm body."""
-    theta = pipeline_state.q[:2]
-    target_pos = pipeline_state.x.pos[2]
+    theta = pipeline_state.q[:-2]
+    target_pos = pipeline_state.x.pos[-2]
     tip_pos = (
         pipeline_state.x.take(1)
         .do(base.Transform.create(pos=jp.array([0.11, 0, 0])))

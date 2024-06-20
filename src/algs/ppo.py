@@ -59,6 +59,10 @@ class Agent(nn.Module):
     def get_action(self, x, action=None):
         return self.get_action_and_value(x, action)[0].detach()
 
+    def forward(self, x):
+        return self.actor_mean(x)
+        #return self.get_action(x, None)
+
 
 class PPO(_Alg):
     def __init__(self, train_envs, all_hooks, learning_rate, num_steps, total_timesteps, num_minibatches, anneal_lr,
@@ -89,8 +93,16 @@ class PPO(_Alg):
         self.target_kl = target_kl
 
     def save(self, path):
-        model_scripted = torch.jit.script(self.agent)  # Export to TorchScript
-        model_scripted.save(f'{path}/model_scripted.pt')  # Save
+        from torch import jit
+
+        self.agent.eval()
+        x = torch.ones(self.train_envs.ONEIROS_METADATA.single_observation_space).to(self.device)[None]
+        net_trace = jit.trace(self.agent, x)
+        jit.save(net_trace, f'{path}/model_scripted.pt')
+        self.agent.train()
+
+        #model_scripted = torch.jit.script(self.agent)  # Export to TorchScript
+        #model_scripted.save(f'{path}/model_scripted.pt')  # Save
 
     def _update(self, obs, actions, logprobs, rewards, dones, values, advantages):
         pass

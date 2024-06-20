@@ -75,6 +75,23 @@ class VectorGymWrapper(gym.vector.VectorEnv):
 
         self._step = jax.jit(step, backend=self.backend)
 
+
+        # find which camera works
+        self._cameras = ["track", "tackcom", "tracking", -1]
+        self._camera_index = 0
+
+        self.reset()
+        works = []
+        for i, cam in enumerate(self._cameras):
+            try:
+                self._camera_index = i
+                self.render("rgb_array")
+                works.append(True)
+            except:
+                works.append(False)
+        self._camera_index = np.argmax(np.array(works))
+
+
     def reset(self):
         self._state, obs, self._key = self._reset(self._key)
         return obs
@@ -93,7 +110,9 @@ class VectorGymWrapper(gym.vector.VectorEnv):
                 raise RuntimeError('must call reset or step before rendering')
 
             state_for_rendering = take0(state.pipeline_state)
-            return image.render_array(sys, state_for_rendering, 256, 256)
+            frame = image.render_array(sys, state_for_rendering, 480, 480, camera=self._cameras[self._camera_index])
+
+            return frame
         else:
             return super().render(mode=mode)  # just raise an exception
 

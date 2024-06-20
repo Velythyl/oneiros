@@ -79,18 +79,7 @@ class VectorGymWrapper(gym.vector.VectorEnv):
         # find which camera works
         self._cameras = ["track", "tackcom", "tracking", -1]
         self._camera_index = 0
-
-        self.reset()
-        works = []
-        for i, cam in enumerate(self._cameras):
-            try:
-                self._camera_index = i
-                self.render("rgb_array")
-                works.append(True)
-            except:
-                works.append(False)
-        self._camera_index = np.argmax(np.array(works))
-
+        self._camera_found = False
 
     def reset(self):
         self._state, obs, self._key = self._reset(self._key)
@@ -104,6 +93,19 @@ class VectorGymWrapper(gym.vector.VectorEnv):
         self._key = jax.random.PRNGKey(seed)
 
     def render(self, mode='human'):
+        if not self._camera_found:
+            self.reset()
+            works = []
+            for i, cam in enumerate(self._cameras):
+                try:
+                    self._camera_index = i
+                    self.render("rgb_array")
+                    works.append(True)
+                except:
+                    works.append(False)
+            self._camera_index = np.argmax(np.array(works))
+            self._camera_found = True
+
         if mode == 'rgb_array':
             sys, state = self._env.sys, self._state
             if state is None:

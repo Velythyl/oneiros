@@ -37,7 +37,7 @@ from src.utils.eval import evaluate
 from src.utils.every_n import EveryN2
 from src.utils.record import record
 
-CUSTOM_ENVS = ["go1"]
+CUSTOM_ENVS = ["go1", "widow"]
 
 @monad_coerce
 def make_brax(brax_cfg, seed):
@@ -49,6 +49,7 @@ def make_brax(brax_cfg, seed):
 
     if ENVNAME in CUSTOM_ENVS:
         from environments.customenv.braxcustom.go1 import Go1 # noqa
+        from environments.customenv.braxcustom.widow_reacher import WidowReacher # noqa
 
     dr_config = build_dr_dataclass(brax_cfg)
     env = brax.envs.create(env_name=ENVNAME, episode_length=brax_cfg.max_episode_length, backend=BACKEND,
@@ -98,11 +99,13 @@ def make_mujoco(mujoco_cfg, seed):
         "pusher": "Pusher-v4",
         "reacher": "Reacher-v4",
         "walker2d": "Walker2d-v4",
-        "go1": "Go1"
+        "go1": "Go1",
+        "widow": "Widow"
     }[BRAX_ENVNAME]
 
     if BRAX_ENVNAME in CUSTOM_ENVS:
         from environments.customenv.mujococustom.go1 import Go1Env # noqa
+        from environments.customenv.mujococustom.widow_reacher import WidowReacher # noqa
 
     class WritePrivilegedInformationWrapper(Wrapper):
         def __init__(self, env):
@@ -170,7 +173,7 @@ def make_mujoco(mujoco_cfg, seed):
         def render(self, *args, **kwargs):
             ret = self.env.call_async("render")
             ret = self.env.call_wait()
-            return ret
+            return ret[0]   # only return first env's video
 
 
     env = AsyncVectorEnvActuallyCloseWrapper(env)
@@ -384,21 +387,11 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     else:
         eval_envs = []
 
-    VIDEO_FREQ = multienv_cfg.video_freq
-    if VIDEO_FREQ and VIDEO_FREQ != "None":
-        video_envs = eval_and_video_envs
-    else:
-        video_envs = []
-
     hook_steps = []
     hooks = []
-    for _env in video_envs:
-        hook_steps.append(VIDEO_FREQ)
-        hooks.append(
-            functools.partial(record, video_envs=_env, RUN_DIR=save_path, NUM_STEPS=multienv_cfg.num_video_steps))
     for _env in eval_envs:
         hook_steps.append(EVAL_FREQ)
-        hooks.append(functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps))
+        hooks.append(functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps, DO_VIDEO=multienv_cfg.do_eval_video))
     all_hooks = EveryN2(hook_steps, hooks)
 
     def close_all_envs():

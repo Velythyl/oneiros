@@ -6,14 +6,15 @@ from tqdm import tqdm
 from src.algs.rma import RMAAgent
 
 
-def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
-
+def evaluate(nsteps, eval_envs, agent, NUM_STEPS, DO_VIDEO):
     collected_infos = {}
 
-
     def render(env):
-        return
-        return env.render()[0][0]
+        if DO_VIDEO:
+            frame = env.render()[0]
+            return frame
+        else:
+            return None
 
     frame_list = []
 
@@ -50,7 +51,7 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS):
 
     assert eval_envs.ONEIROS_METADATA.prefix != "MULTIPLEX"
 
-    if False:
+    if DO_VIDEO:
         FPS = 30
         import cv2
         SHAPE = frame_list[0].shape

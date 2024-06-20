@@ -1,8 +1,8 @@
 env_key:
   - mujoco-go1
   - braxgeneralized-go1
-  #- braxpositional-go1
-  #- braxspring-go1
+  - braxpositional-go1
+  - braxspring-go1
   - braxmjx-go1
 
 device: cuda

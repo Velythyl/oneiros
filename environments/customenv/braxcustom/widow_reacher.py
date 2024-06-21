@@ -28,6 +28,8 @@ from etils import epath
 import jax
 from jax import numpy as jp
 
+from environments.customenv.common_utils import random_sphere_jax, random_sphere_jax_minradius
+
 
 class WidowReacher(PipelineEnv):
 
@@ -193,21 +195,50 @@ class WidowReacher(PipelineEnv):
     metrics = {
         'reward_dist': zero,
         'reward_ctrl': zero,
+        'target_pos': self.target_pos(pipeline_state),
+        'target_pos_raw': target,
+        'tip_pos': self.tip_pos(pipeline_state)
     }
     return State(pipeline_state, obs, reward, done, sys, metrics)
+
+  def tip_pos(self, pipeline_state):
+      tip_pos = (
+          pipeline_state.x.take(-2)
+          .do(base.Transform.create(pos=jp.array([0., 0, 0])))
+          .pos
+      )
+      return tip_pos
+
+
+  def target_pos(self, pipeline_state):
+      tip_pos = (
+          pipeline_state.x.take(-1)
+          .do(base.Transform.create(pos=jp.array([0., 0, 0])))
+          .pos
+      )
+      return tip_pos
+      return pipeline_state.x.pos[-3:]  # target state
+
 
   def step(self, state: State, action: jax.Array) -> State:
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
     obs = self._get_obs(pipeline_state)
 
+    target_pos = self.target_pos(pipeline_state)  # target state
+    tip_pos = self.tip_pos(pipeline_state)
+    # fixme what is this x.take(1) even doing? why not just theta.q[-6:-3]?
+
+
     # vector from tip to target is last 3 entries of obs vector
-    reward_dist = -math.safe_norm(obs[-3:]) # charlie todo fixme
+    reward_dist = -math.safe_norm(target_pos - tip_pos) # charlie todo fixme
     reward_ctrl = -jp.square(action).sum()
     reward = reward_dist + reward_ctrl
 
     state.metrics.update(
         reward_dist=reward_dist,
         reward_ctrl=reward_ctrl,
+        target_pos=self.target_pos(pipeline_state),
+        tip_pos=self.tip_pos(pipeline_state)
     )
 
     return state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)
@@ -220,35 +251,34 @@ class WidowReacher(PipelineEnv):
 
     # fixme what is this x.take(1) even doing? why not just theta.q[-6:-3]?
     tip_pos = (
-        pipeline_state.x.take(1)
-        .do(base.Transform.create(pos=jp.array([0.11, 0, 0])))
+        pipeline_state.x.take(-1)
+        .do(base.Transform.create(pos=jp.array([0., 0, 0])))
         .pos
     )
+    #tip_pos = pipeline_state.q[-6:-3]
+
     # tip_vel, instead of pipeline_state.qd[:2], leads to more sensible policies
     # for a randomly initialized policy network
-    tip_vel = (
-        base.Transform.create(pos=jp.array([0.11, 0, 0]))
-        .do(pipeline_state.xd.take(1))
-        .vel
-    )
-    tip_to_target = tip_pos - target_pos
+    #tip_vel = (
+    #    base.Transform.create(pos=jp.array([0.11, 0, 0]))
+    #    .do(pipeline_state.xd.take(-1))
+    #    .vel
+    #)
 
     return jp.concatenate([
-        jp.cos(theta),  # # fixme we probably want to output raw qpos values and not cos and sin
-        jp.sin(theta),
+        #jp.cos(theta),  # # fixme we probably want to output raw qpos values and not cos and sin
+        #jp.sin(theta),
+        theta,
         pipeline_state.q[-3:],  # target x, y
-        tip_vel,
-        tip_to_target,
+        #tip_vel,
+        #tip_to_target, #
     ])
 
   def _random_target(self, rng: jax.Array) -> Tuple[jax.Array, jax.Array]:
     """Returns a target location in a random circle slightly above xy plane."""
-    rng, rng1, rng2 = jax.random.split(rng, 3)
-    dist = 0.2 * jax.random.uniform(rng1)
-    ang = jp.pi * 2.0 * jax.random.uniform(rng2)
-    target_x = dist * jp.cos(ang)
-    target_y = dist * jp.sin(ang)
-    return rng, jp.array([target_x, target_y])
+    key, rng = jax.random.split(rng)
+    point = random_sphere_jax_minradius(rng, 0.66, 0.2)
+    return key, point.at[-1].set(jp.abs(point[-1]) + 0.01)
 
 import brax
 def register(name, clazz):

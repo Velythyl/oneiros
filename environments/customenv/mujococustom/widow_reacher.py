@@ -6,6 +6,7 @@ from gymnasium import utils
 from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 
+from environments.customenv.common_utils import random_sphere_numpy_minradius
 
 DEFAULT_CAMERA_CONFIG = {"trackbodyid": 0}
 
@@ -149,7 +150,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         )
 
     def step(self, a):
-        vec = self.get_body_com("fingertip") - self.get_body_com("target")
+        vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)
         reward_ctrl = -np.square(a).sum()
         reward = reward_dist + reward_ctrl
@@ -164,18 +165,21 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             reward,
             False,
             False,
-            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl),
+            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl, target_pos_raw=self.goal, target_pos=self.get_body_com("target"), tip_pos=self.get_body_com("wx250s/right_finger_link")),
         )
+
+    def _random_target(self):
+        """Returns a target location in a random circle slightly above xy plane."""
+        point = random_sphere_numpy_minradius( 0.66, 0.2)
+        point[-1] = np.abs(point[-1]) + 0.01
+        return point
 
     def reset_model(self):
         qpos = (
             self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq)
             + self.init_qpos
         )
-        while True:
-            self.goal = self.np_random.uniform(low=-0.2, high=0.2, size=2)
-            if np.linalg.norm(self.goal) < 0.2:
-                break
+        self.goal = self._random_target()
         qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv
@@ -188,11 +192,13 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         theta = self.data.qpos.flat[:-3]    # this gets everything up until the target
         return np.concatenate(
             [
-                np.cos(theta),  # fixme we probably want to output raw qpos values and not cos and sin
-                np.sin(theta),
-                self.data.qpos.flat[-3:],
-                self.data.qvel.flat[:2],    # todo fixme this one is wrong
-                self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target"),
+                theta,
+                #np.cos(theta),  # fixme we probably want to output raw qpos values and not cos and sin
+                #np.sin(theta),
+                self.get_body_com("target")
+                #self.data.qpos.flat[-3:],
+                #self.data.qvel.flat[:2],    # todo fixme this one is wrong
+                #self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target"),
             ]
         )
 

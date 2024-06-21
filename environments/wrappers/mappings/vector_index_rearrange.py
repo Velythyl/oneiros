@@ -257,13 +257,16 @@ if __name__ == "__main__":
     brax_env = brax.envs.create(env_name="widow", episode_length=1000, backend="generalized",
                                 batch_size=2, no_vsys=True)
 
-    reset = jax.jit(brax_env.reset)
-    step = jax.jit(brax_env.step)
-    state = reset(jax.random.PRNGKey(0))
-    #state = step(state, jax.numpy.zeros((2, brax_env.action_size)))
+    reset = (brax_env.reset)
+    step = (brax_env.step)
+    #brax_reset_state = reset(jax.random.PRNGKey(0))
+    #brax_step_state = step(brax_reset_state, jax.numpy.zeros((2, brax_env.action_size)))
 
-    mujoco_mass = mujoco.unwrapped.model.body_mass
-    brax_mass = state.sys.body_mass
+    mujoco_reset_state = mujoco.reset()
+    mujoco_step_state = mujoco.step(action=mujoco.action_space.sample()*0)
+
+    #mujoco_mass = mujoco.unwrapped.model.body_mass
+    #brax_mass = state.sys.body_mass
 
     obs, act = map_func_lookup("ant")
 

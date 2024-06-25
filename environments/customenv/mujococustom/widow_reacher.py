@@ -139,7 +139,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
                                 **kwargs)
 
 
-        observation_space = Box(low=-np.inf, high=np.inf, shape=(11,), dtype=np.float64)
+        observation_space = Box(low=-np.inf, high=np.inf, shape=(21,), dtype=np.float64)
         MujocoEnv.__init__(
             self,
             xml_file,
@@ -176,29 +176,26 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
 
     def reset_model(self):
         qpos = (
-            self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq)
+            self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) * 0
             + self.init_qpos
         )
         self.goal = self._random_target()
         qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv
-        )
+        ) * 0
         qvel[-3:] = 0
         self.set_state(qpos, qvel)
         return self._get_obs()
 
     def _get_obs(self):
-        theta = self.data.qpos.flat[:-3]    # this gets everything up until the target
+        self_pos = self.data.qpos.flat[:-3]
+        self_vel = self.data.qvel.flat[:-3]
         return np.concatenate(
             [
-                theta,
-                #np.cos(theta),  # fixme we probably want to output raw qpos values and not cos and sin
-                #np.sin(theta),
+                self_pos,
+                self_vel,
                 self.get_body_com("target")
-                #self.data.qpos.flat[-3:],
-                #self.data.qvel.flat[:2],    # todo fixme this one is wrong
-                #self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target"),
             ]
         )
 

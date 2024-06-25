@@ -164,9 +164,9 @@ class WidowReacher(PipelineEnv):
 
     if backend in ['spring', 'positional']:
       sys = sys.replace(dt=0.005)
-      sys = sys.replace(
-          actuator=sys.actuator.replace(gear=jp.array([25.0, 25.0]))
-      )
+      #sys = sys.replace(
+      #    actuator=sys.actuator.replace(gear=jp.array([25.0, 25.0]))
+      #)
       n_frames = 4
 
     kwargs['n_frames'] = kwargs.get('n_frames', n_frames)
@@ -178,10 +178,10 @@ class WidowReacher(PipelineEnv):
 
     q = sys.init_q + jax.random.uniform(
         rng1, (sys.q_size(),), minval=-0.1, maxval=0.1
-    )
+    ) * 0
     qd = jax.random.uniform(
         rng2, (sys.qd_size(),), minval=-0.005, maxval=0.005
-    )
+    ) * 0
 
     # set the target q, qd
     _, target = self._random_target(rng)
@@ -195,9 +195,9 @@ class WidowReacher(PipelineEnv):
     metrics = {
         'reward_dist': zero,
         'reward_ctrl': zero,
-        'target_pos': self.target_pos(pipeline_state),
-        'target_pos_raw': target,
-        'tip_pos': self.tip_pos(pipeline_state)
+    #    'target_pos': self.target_pos(pipeline_state),
+    #    'target_pos_raw': target,
+    #    'tip_pos': self.tip_pos(pipeline_state)
     }
     return State(pipeline_state, obs, reward, done, sys, metrics)
 
@@ -237,41 +237,22 @@ class WidowReacher(PipelineEnv):
     state.metrics.update(
         reward_dist=reward_dist,
         reward_ctrl=reward_ctrl,
-        target_pos=self.target_pos(pipeline_state),
-        tip_pos=self.tip_pos(pipeline_state)
+    #    target_pos=self.target_pos(pipeline_state),
+    #    tip_pos=self.tip_pos(pipeline_state)
     )
 
     return state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)
 
   def _get_obs(self, pipeline_state: base.State) -> jax.Array:
     """Returns egocentric observation of target and arm body."""
-    theta = pipeline_state.q[:-3]   # robot state
 
-    target_pos = pipeline_state.x.pos[-3:]  # target state
-
-    # fixme what is this x.take(1) even doing? why not just theta.q[-6:-3]?
-    tip_pos = (
-        pipeline_state.x.take(-1)
-        .do(base.Transform.create(pos=jp.array([0., 0, 0])))
-        .pos
-    )
-    #tip_pos = pipeline_state.q[-6:-3]
-
-    # tip_vel, instead of pipeline_state.qd[:2], leads to more sensible policies
-    # for a randomly initialized policy network
-    #tip_vel = (
-    #    base.Transform.create(pos=jp.array([0.11, 0, 0]))
-    #    .do(pipeline_state.xd.take(-1))
-    #    .vel
-    #)
+    self_pos = pipeline_state.q[:-3]
+    self_vel = pipeline_state.qd[:-3]
 
     return jp.concatenate([
-        #jp.cos(theta),  # # fixme we probably want to output raw qpos values and not cos and sin
-        #jp.sin(theta),
-        theta,
-        pipeline_state.q[-3:],  # target x, y
-        #tip_vel,
-        #tip_to_target, #
+        self_pos,
+        self_vel,
+        pipeline_state.q[-3:]
     ])
 
   def _random_target(self, rng: jax.Array) -> Tuple[jax.Array, jax.Array]:

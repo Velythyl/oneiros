@@ -46,16 +46,10 @@
   <worldbody>
     <light mode="targetbodycom" target="wx250s/gripper_link" pos="1 0 1"/>
     <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane"/>
-    <!-- Arena -->
-		<geom conaffinity="0" contype="0" name="ground" pos="0 0 0" size="1 1 10" type="plane"/>
-		<geom conaffinity="0" fromto="-.3 -.3 .01 .3 -.3 .01" name="sideS" size=".02" type="capsule"/>
-		<geom conaffinity="0" fromto=" .3 -.3 .01 .3  .3 .01" name="sideE" size=".02" type="capsule"/>
-		<geom conaffinity="0" fromto="-.3  .3 .01 .3  .3 .01" name="sideN" size=".02" type="capsule"/>
-		<geom conaffinity="0" fromto="-.3 -.3 .01 -.3 .3 .01" name="sideW" size=".02" type="capsule"/>
     <body name="wx250s/base_link" childclass="wx250s">
+      <joint type="slide" stiffness="100" damping="0" frictionloss="0" armature="0"  range="-0.0001 0.0001" name="baseinertia"/>
       <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="0.538736"
         diaginertia="0.00252518 0.00211519 0.000690737"/>
-      <freejoint/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="collision"/>
       <body name="wx250s/shoulder_link" pos="0 0 0.072">
@@ -121,7 +115,6 @@
         </body>
       </body>
     </body>
-    <!-- Target -->
     <body name="target" pos="0 0 0.01" gravcomp="1">
         <!-- The joint `ref` attributes are removed for brax. -->
         <joint armature="0" axis="1 0 0" damping="0" limited="true" name="target_x" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>

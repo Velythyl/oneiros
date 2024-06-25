@@ -254,20 +254,25 @@ if __name__ == "__main__":
 
     mujoco = gymnasium.make("Widow", max_episode_steps=1000, autoreset=True)
 
-    brax_env = brax.envs.create(env_name="widow", episode_length=1000, backend="generalized",
+
+    mujoco_reset_state = mujoco.reset()
+    mujoco_step_state = mujoco.step(action=np.ones_like(mujoco.action_space.sample()) * 0)
+
+    brax_env = brax.envs.create(env_name="widow", episode_length=1000, backend="mjx",
                                 batch_size=2, no_vsys=True)
 
     reset = (brax_env.reset)
     step = (brax_env.step)
-    #brax_reset_state = reset(jax.random.PRNGKey(0))
-    #brax_step_state = step(brax_reset_state, jax.numpy.zeros((2, brax_env.action_size)))
+    brax_reset_state = reset(jax.random.PRNGKey(0))
+    brax_step_state = step(brax_reset_state, jax.numpy.ones((2, brax_env.action_size))* 0)
 
-    mujoco_reset_state = mujoco.reset()
-    mujoco_step_state = mujoco.step(action=mujoco.action_space.sample()*0)
 
     #mujoco_mass = mujoco.unwrapped.model.body_mass
     #brax_mass = state.sys.body_mass
 
+
+    for i in range(1000):
+        print(i)
     obs, act = map_func_lookup("ant")
 
     x = act(np.arange(8))

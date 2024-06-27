@@ -3,6 +3,8 @@ import functools
 import gc
 import json
 import random
+import threading
+import time
 from typing import Any, Tuple
 
 import gym
@@ -399,11 +401,36 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     gc.collect()
     print("...done!")
 
+    # Function to keep the environment alive
+    def keep_alive(envs, stop_thread, interval=1):
+        while not stop_thread.is_set():
+            for env in envs:
+                env.step(env.action_space.sample())
+                time.sleep(interval)  # Sleep for the given interval before the next step
+
+    def start_thread(envs):
+        # Create and start a thread to run the keep-alive function
+        stop_thread = threading.Event()
+        keep_alive_thread = threading.Thread(target=keep_alive, args=(envs,stop_thread))
+        keep_alive_thread.daemon = True  # Daemonize the thread to exit when the main program exits
+        keep_alive_thread.start()
+        return keep_alive_thread, stop_thread
+
+    def stop_thread(keep_alive_thread, stop_thread):
+        stop_thread.set()  # Signal the thread to stop
+        keep_alive_thread.join()  # Wait for the thread to finish
+
+    se = start_thread([train_env])
+
+
     print("Building eval envs...")
     eval_and_video_envs = []
     for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
         sliced_multiplex = monad_multiplex(sliced_multiplex)
         eval_and_video_envs += [make_multiplex(sliced_multiplex, seed + i + 1)]
+
+        stop_thread(*se)
+        se = start_thread([train_env] + eval_and_video_envs)
 
         assert eval_and_video_envs[
                    -1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
@@ -411,6 +438,10 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
                    -1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
         gc.collect()
     print("...done!")
+
+    stop_thread(*se)
+
+
 
     EVAL_FREQ = multienv_cfg.eval_freq
     if EVAL_FREQ and EVAL_FREQ != "None":

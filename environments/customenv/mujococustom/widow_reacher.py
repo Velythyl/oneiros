@@ -149,6 +149,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             **kwargs,
         )
 
+
     def step(self, a):
         vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)

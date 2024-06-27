@@ -17,5 +17,5 @@ action_repeat: None  # todo
 dr_percent_below: 0.5
 dr_percent_above: 10.0
 dr_do_on_reset: True
-dr_do_on_N_step: 5:50
+dr_do_on_N_step: 2000:2001
 dr_do_at_creation: False

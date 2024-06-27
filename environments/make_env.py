@@ -5,6 +5,7 @@ import json
 import random
 from typing import Any, Tuple
 
+import gym
 import jax.random
 import numpy as np
 import torch
@@ -59,7 +60,7 @@ def make_brax(brax_cfg, seed):
         val = dr_config.do_on_N_step
 
         def sample_num(rng):
-            return jax.random.uniform(rng, minval=val[0], maxval=val[1])
+            return jax.random.randint(rng, shape=(1,), minval=val[0], maxval=val[1])[0]
 
         dr_config = dataclasses.replace(dr_config, do_on_N_step=sample_num)
 
@@ -76,7 +77,33 @@ def make_brax(brax_cfg, seed):
     env = WritePrivilegedInformationWrapper(env)
     env = TorchWrapper(env, device=brax_cfg.device)
 
+    def detach(tensor):
+        try:
+            tensor = tensor.detach()
+        except:
+            pass
+        try:
+            tensor.requires_grad = False
+        except:
+            pass
+        return tensor
+
+    class Detach(gym.Wrapper):
+        def reset(self):
+            return detach(super().reset())
+
+        def step(self, action):
+            rets = super().step(detach(action))
+            rets = [detach(t) for t in rets]
+            return rets
+
+    env = Detach(env)
+
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
+
+    env.reset()
+    for i in range(10):
+        env.step(env.action_space.sample())
 
     return env
 
@@ -193,6 +220,10 @@ def make_mujoco(mujoco_cfg, seed):
     env = MujocoRenderWrapper(env)
 
     print(f"Mujoco env built: {envkey_multiplex(mujoco_cfg)}")
+
+    env.reset()
+    for i in range(10):
+        env.step(env.action_space.sample())
 
     return env
 

@@ -172,6 +172,9 @@ class WidowReacher(PipelineEnv):
     kwargs['n_frames'] = kwargs.get('n_frames', n_frames)
 
     super().__init__(sys=sys, backend=backend, **kwargs)
+  @property
+  def observation_size(self):
+      return (21,)
 
   def reset(self, sys: System, rng: jax.Array) -> State:
     rng, rng1, rng2 = jax.random.split(rng, 3)

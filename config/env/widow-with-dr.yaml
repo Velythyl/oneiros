@@ -1,12 +1,12 @@
 env_key:
-  - mujoco-widow
-  - braxgeneralized-widow
-  - braxpositional-widow
+  #- braxgeneralized-widow
+  #- braxpositional-widow
   - braxspring-widow
-  - braxmjx-widow
+  #- braxmjx-widow
+  - mujoco-widow
 
 device: cuda
-num_env: 4 #100
+num_env: 2 #100
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo

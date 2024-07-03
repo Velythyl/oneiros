@@ -103,9 +103,9 @@ def make_brax(brax_cfg, seed):
 
     print(f"Brax env built: {envkey_multiplex(brax_cfg)}")
 
-    env.reset()
-    for i in range(10):
-        env.step(env.action_space.sample())
+    #for i in range(10):
+    #    env.reset()
+    #    env.step(torch.from_numpy(env.action_space.sample()).to(brax_cfg.device))
 
     return env
 
@@ -223,9 +223,9 @@ def make_mujoco(mujoco_cfg, seed):
 
     print(f"Mujoco env built: {envkey_multiplex(mujoco_cfg)}")
 
-    env.reset()
-    for i in range(10):
-        env.step(env.action_space.sample())
+    #for i in range(10):
+    #    env.reset()
+    #    env.step(torch.from_numpy(env.action_space.sample()).to(mujoco_cfg.device))
 
     return env
 
@@ -264,11 +264,80 @@ def get_json_identifier(sliced_multiplex_env_cfg):
     prefix = f"{prefix} {dr_config_json}"
 
 
+class KeepAlive:
+    def __init__(self, device="cuda", interval=5):
+        self.envlist = []
+
+        self.threads = []
+        self.stops = []
+        self.device = device
+        self.interval = interval
+
+    def keep_alive(self, env, stop_thread, do_four_times):
+        env.reset()
+
+        num_dones = 0
+        while True:
+            if stop_thread.wait(self.interval):
+                if do_four_times:
+                    if num_dones > 4:
+                        break
+                    else:
+                        pass
+                else:
+                    break
+            env.reset()
+            env.step(torch.from_numpy(env.action_space.sample()).to(self.device))
+            #stop_thread.wait(interval)  # Sleep for the given interval before the next step
+            num_dones += 1
+            time.sleep(1)
+
+            #print(f"\t\t...keep alive {env}...")
+
+        print(f"\t\tKept alive {env}!")
+    def start_all(self, do_four_times=False):
+        for env in self.envlist:
+            self._start(env, do_four_times=do_four_times)
+
+
+    def _start(self, env, do_four_times=False):
+        self.stops += [threading.Event()]
+        self.threads += [threading.Thread(target=self.keep_alive, args=(env, self.stops[-1], do_four_times))]
+        self.threads[-1].daemon = True  # Daemonize the thread to exit when the main program exits
+        self.threads[-1].start()
+
+
+    def start_new(self, envs, do_four_times=False):
+        if not isinstance(envs, list):
+            envs = [envs]
+
+        envs = list(filter(lambda x: x is not None, envs))
+        self.envlist = self.envlist + envs
+
+        for env in envs:
+            self._start(env, do_four_times=do_four_times)
+
+    def stop_all(self):
+        for stop, thread in zip(self.stops, self.threads):
+            stop.set()
+            thread.join()
+
+        print("Stopped all keepalive threads!")
+
+        self.stops = []
+        self.threads = []
+
 def make_multiplex(multiplex_env_cfg, seed):
+    #KEEP_ALIVE = KeepAlive()
+
     base_envs = []
     for sliced_multiplex in splat_multiplex(multiplex_env_cfg):
         base_envs += make_brax(sliced_multiplex, seed)
         base_envs += make_mujoco(sliced_multiplex, seed)
+
+    #    KEEP_ALIVE.start_new(base_envs[-2:], do_four_times=True)
+
+    #KEEP_ALIVE.stop_all()
 
     base_envs = list(filter(lambda x: x is not None, base_envs))
     assert len(base_envs) == num_multiplex(multiplex_env_cfg)
@@ -287,6 +356,7 @@ def make_multiplex(multiplex_env_cfg, seed):
     DO_MAT_FRAMESTACK = slice_multiplex(multiplex_env_cfg, 0).mat_framestack_instead
     LAST_ACTION = slice_multiplex(multiplex_env_cfg, 0).last_action
 
+
     for i, env in enumerate(base_envs):
         if DO_FRAMESTACK and not DO_MAT_FRAMESTACK:
             env = VecFrameStackEnv(env, device=multiplex_env_cfg.device[0],
@@ -303,7 +373,19 @@ def make_multiplex(multiplex_env_cfg, seed):
             if LAST_ACTION:
                 env = LastActEnv(env, device=multiplex_env_cfg.device[0])
 
-        base_envs[i] = env
+        import gym
+        def nan_to_num(x):
+            return torch.nan_to_num(torch.nan_to_num(x, nan=-np.inf), neginf=-100_000)
+        class NanToNumObs(gym.Wrapper):
+            def reset(self, **kwargs):
+                return nan_to_num(self.env.reset(**kwargs))
+            def step(self, action):
+
+                action = nan_to_num(action) #torch.nan_to_num(torch.nan_to_num(action, nan=-np.inf))
+                rets = super().step(action)
+                return nan_to_num(rets[0]), rets[1], rets[2], rets[3]
+
+        base_envs[i] = NanToNumObs(env)
 
     PROTO_ACT = single_action_space(base_envs[0])
     PROTO_OBS = single_observation_space(base_envs[0])
@@ -328,9 +410,11 @@ def make_multiplex(multiplex_env_cfg, seed):
         assert single_observation_space(env) == PROTO_OBS
         assert num_envs(env) == PROTO_NUM_ENV
 
+        print("Getting priv key information...")
         env.reset()
-        ret = env.step(action=torch.from_numpy(env.action_space.sample()))
+        ret = env.step(action=torch.from_numpy(env.action_space.sample()).to(multiplex_env_cfg.device[0]))
         priv_key = list(filter(lambda k: k.endswith("#priv"), list(ret[-1].keys())))
+        print("...done!")
         assert len(priv_key) == 1
         priv_key = priv_key[0]
         priv_size = ret[-1][priv_key].shape[-1]
@@ -340,12 +424,13 @@ def make_multiplex(multiplex_env_cfg, seed):
 
         METADATA_PREFIX = f"{envkey_multiplex(slice_multiplex(multiplex_env_cfg, i))} L{slice_multiplex(multiplex_env_cfg, i).dr_percent_below} H{slice_multiplex(multiplex_env_cfg, i).dr_percent_above}"
         METADATA_PREFIX = METADATA_PREFIX.replace(".", ",")
-        def assigns(e):
-            e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), METADATA_PREFIX, PROTO_NUM_ENV, priv_size)
-            bind(e, traverse_envstack)
-            bind(e, get_envstack)
+        env.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), METADATA_PREFIX, PROTO_NUM_ENV, priv_size)
+        #def assigns(e):
+        #    e.ONEIROS_METADATA = metadata_maker(slice_multiplex(multiplex_env_cfg, i), METADATA_PREFIX, PROTO_NUM_ENV, priv_size)
+        #    bind(e, traverse_envstack)
+        #    bind(e, get_envstack)
 
-        traverse_envstack(env, assigns)
+        #traverse_envstack(env, assigns)
         base_envs[i] = env
 
     env = MultiPlexEnv(base_envs, multiplex_env_cfg.device[0], )  # ["priv"])
@@ -388,19 +473,42 @@ def make_multiplex(multiplex_env_cfg, seed):
 
     env.ONEIROS_METADATA = metadata_maker(multiplex_env_cfg, "MULTIPLEX" if len(base_envs) > 1 else base_envs[0].ONEIROS_METADATA.prefix, PROTO_NUM_ENV * len(base_envs), priv_size)
 
+    #KEEP_ALIVE.stop_all()
+
     return env
+
+
 
 
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DOING_POWERSET = multienv_cfg.do_powerset
 
-    print("Building training envs...")
-    train_env = make_multiplex(multienv_cfg.train, seed)
-    gc.collect()
-    print("...done!")
 
+    DEBUG_VIDEO = True
+
+    if not DEBUG_VIDEO:
+        #KEEP_ALIVE = KeepAlive()
+
+
+        DOING_POWERSET = multienv_cfg.do_powerset
+
+        print("Building training envs...")
+        train_env = make_multiplex(multienv_cfg.train, seed)
+        gc.collect()
+        print("...done!")
+
+    #KEEP_ALIVE.start_new(train_env)
+
+
+
+
+
+
+
+
+
+    """
     # Function to keep the environment alive
     def keep_alive(envs, stop_thread, interval=1):
         while not stop_thread.is_set():
@@ -421,6 +529,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         keep_alive_thread.join()  # Wait for the thread to finish
 
     se = start_thread([train_env])
+    """
 
 
     print("Building eval envs...")
@@ -429,17 +538,29 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         sliced_multiplex = monad_multiplex(sliced_multiplex)
         eval_and_video_envs += [make_multiplex(sliced_multiplex, seed + i + 1)]
 
-        stop_thread(*se)
-        se = start_thread([train_env] + eval_and_video_envs)
+    #    KEEP_ALIVE.start_new(eval_and_video_envs[-1])
 
-        assert eval_and_video_envs[
-                   -1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
-        assert eval_and_video_envs[
-                   -1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
+        if not DEBUG_VIDEO:
+            assert eval_and_video_envs[
+                       -1].ONEIROS_METADATA.single_action_space == train_env.ONEIROS_METADATA.single_action_space
+            assert eval_and_video_envs[
+                       -1].ONEIROS_METADATA.single_observation_space == train_env.ONEIROS_METADATA.single_observation_space
         gc.collect()
+
+        if DEBUG_VIDEO:
+            class Agent:
+                def get_action(self, *args):
+                    return torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")
+            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=100,
+                     DO_VIDEO=True, agent=Agent())
+
+
     print("...done!")
 
-    stop_thread(*se)
+    #KEEP_ALIVE.stop_all()
+    #KEEP_ALIVE.start_all( do_four_times=True)
+    #KEEP_ALIVE.stop_all()
+
 
 
 
@@ -449,11 +570,28 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     else:
         eval_envs = []
 
+    class KeepAliveHook:
+        def __init__(self, _env, func):
+            self.keep_alive = KeepAlive(interval=10)
+            self.keep_alive.start_new(_env)
+            self.env = _env
+            self.func = func
+
+        def __call__(self, nsteps, agent):
+            self.keep_alive.stop_all()
+            ret = self.func(nsteps=nsteps, agent=agent)
+            self.keep_alive.start_all()
+            return ret
+
     hook_steps = []
     hooks = []
     for _env in eval_envs:
         hook_steps.append(EVAL_FREQ)
-        hooks.append(functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps, DO_VIDEO=multienv_cfg.do_eval_video))
+
+        func = functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps,
+                          DO_VIDEO=multienv_cfg.do_eval_video)
+
+        hooks.append(KeepAliveHook(_env, func))
     all_hooks = EveryN2(hook_steps, hooks)
 
     def close_all_envs():

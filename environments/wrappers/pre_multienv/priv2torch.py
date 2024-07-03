@@ -11,7 +11,6 @@ class Priv2Torch(gym.Wrapper):
     def step(self, action):
         ret = super(Priv2Torch, self).step(action)
 
-
         if self.priv_key in ret[-1] and isinstance(ret[-1][self.priv_key], np.ndarray):
             ret[-1][self.priv_key] = torch.tensor(ret[-1][self.priv_key]).to(device=self.device)
         #ret[-1]["priv"] = ret[-1][self.priv_key]

@@ -129,7 +129,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             "rgb_array",
             "depth_array",
         ],
-        "render_fps": 250,
+        "render_fps": 100,
     }
 
     def __init__(self, **kwargs):
@@ -143,7 +143,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         MujocoEnv.__init__(
             self,
             xml_file,
-            2,
+            5,
             observation_space=observation_space,
             default_camera_config=DEFAULT_CAMERA_CONFIG,
             **kwargs,

@@ -47,11 +47,13 @@
     <light mode="targetbodycom" target="wx250s/gripper_link" pos="1 0 1"/>
     <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane"/>
     <body name="wx250s/base_link" childclass="wx250s">
-      <joint type="slide" stiffness="100" damping="0" frictionloss="0" armature="0"  range="-0.0001 0.0001" name="baseinertia"/>
+      <freejoint name="root"/>
+      <!--<joint type="slide" stiffness="100" damping="0" frictionloss="0" armature="0"  range="-0.0001 0.0001" name="baseinertia"/> -->
       <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="0.538736"
         diaginertia="0.00252518 0.00211519 0.000690737"/>
       <!-- <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/> -->
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="collision"/>
+      <camera name="tracking" mode="trackcom" pos="0 -1 0.8" xyaxes="1 0 0 0 1 1"/>
       <body name="wx250s/shoulder_link" pos="0 0 0.072">
         <inertial pos="2.23482e-05 4.14609e-05 0.0066287" quat="0.0130352 0.706387 0.012996 0.707586" mass="0.480879"
           diaginertia="0.000588946 0.000555655 0.000378999"/>

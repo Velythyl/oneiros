@@ -157,24 +157,29 @@ class WidowReacher(PipelineEnv):
 
 
   def __init__(self, backend='generalized', **kwargs):
-    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s.xml'
+    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_visual.xml'
     sys = mjcf.load(path)
 
-    n_frames = 2
+    n_frames = 5
 
     if backend in ['spring', 'positional']:
-      sys = sys.replace(dt=0.005)
+      sys = sys.replace(dt=0.001)
       #sys = sys.replace(
       #    actuator=sys.actuator.replace(gear=jp.array([25.0, 25.0]))
       #)
-      n_frames = 4
+      n_frames = 10
+      # TODO: does the same actuator strength work as in spring
+      sys = sys.replace(
+          actuator=sys.actuator.replace(
+              gain=sys.actuator.gain.at[-1].set(50),
+              gear=(10 * jp.ones_like(sys.actuator.gear)).at[-1].set(1.).at[0].set(100),
+          )
+      )
 
     kwargs['n_frames'] = kwargs.get('n_frames', n_frames)
 
     super().__init__(sys=sys, backend=backend, **kwargs)
-  @property
-  def observation_size(self):
-      return (21,)
+
 
   def reset(self, sys: System, rng: jax.Array) -> State:
     rng, rng1, rng2 = jax.random.split(rng, 3)
@@ -191,18 +196,30 @@ class WidowReacher(PipelineEnv):
     q = q.at[-3:].set(target)
     qd = qd.at[-3:].set(0)
 
+    #sys = sys.replace(dof=sys.dof.replace(limit=(sys.dof.limit[0].at[-3:].set(target), sys.dof.limit[1].at[-3:].set(target))))
+
     pipeline_state = self.pipeline_init(sys, q, qd)
+
 
     obs = self._get_obs(pipeline_state)
     reward, done, zero = jp.zeros(3)
     metrics = {
         'reward_dist': zero,
         'reward_ctrl': zero,
-    #    'target_pos': self.target_pos(pipeline_state),
-    #    'target_pos_raw': target,
-    #    'tip_pos': self.tip_pos(pipeline_state)
+        'target_pos': self.target_pos(pipeline_state),
+        'target_pos_raw': target,
+        'tip_pos': self.tip_pos(pipeline_state)
     }
     return State(pipeline_state, obs, reward, done, sys, metrics)
+
+  def set_target(self, pipeline_state, target):
+      q, qd = pipeline_state.q, pipeline_state.qd
+
+      q = q.at[-3:].set(target)
+      qd = qd.at[-3:].set(0)
+
+      return pipeline_state.replace(q=q, qd=qd)
+
 
   def tip_pos(self, pipeline_state):
       tip_pos = (
@@ -225,6 +242,10 @@ class WidowReacher(PipelineEnv):
 
   def step(self, state: State, action: jax.Array) -> State:
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
+
+    pipeline_state = self.set_target(pipeline_state, state.metrics["target_pos_raw"])
+    #pipeline_state = pipeline_state.replace(qd=pipeline_state.qd.at[-3:].set(0))
+
     obs = self._get_obs(pipeline_state)
 
     target_pos = self.target_pos(pipeline_state)  # target state
@@ -240,8 +261,8 @@ class WidowReacher(PipelineEnv):
     state.metrics.update(
         reward_dist=reward_dist,
         reward_ctrl=reward_ctrl,
-    #    target_pos=self.target_pos(pipeline_state),
-    #    tip_pos=self.tip_pos(pipeline_state)
+        target_pos=self.target_pos(pipeline_state),
+        tip_pos=self.tip_pos(pipeline_state)
     )
 
     return state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)

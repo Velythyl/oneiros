@@ -57,6 +57,7 @@ class MultiPlexEnv(Wrapper):
             start = 0
             for i, stop in enumerate(range(self.num_envs_per_env, (1+self.env_list_len) * self.num_envs_per_env, self.num_envs_per_env)):
                 acts = torch.clone(action[start:stop]).detach()
+                acts.requires_grad = False
                 start = stop
 
                 obs, rew, done, info = self.env_list[i].step(acts)

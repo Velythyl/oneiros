@@ -178,8 +178,8 @@ def get_pd(run_dir):
 
     frame = frame[[col for col in frame.columns if any(col.endswith(suffix) for suffix in COLS_TO_KEEP_ENDSWITH)]]
 
-    #if "ant" not in FOUND_ENV:
-    #    shutil.rmtree(run_dir)
+    if "hopper" in FOUND_ENV:
+        shutil.rmtree(run_dir)
 
     return frame, FOUND_ENV
 
@@ -900,8 +900,8 @@ if __name__ == "__main__":
     DIR = "./runs"
     ENV = "ant"
 
-    #prep_env_checkpoints(DIR)
-    #exit()
+    prep_env_checkpoints(DIR)
+    exit()
 
     """
     DID_ONE_LEGEND = False

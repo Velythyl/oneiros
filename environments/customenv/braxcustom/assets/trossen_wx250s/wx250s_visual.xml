@@ -2,8 +2,24 @@
   <compiler angle="radian" meshdir="simplifiedassets" texturedir="simplifiedassets" autolimits="true"/>
 
   <!--
-  <option integrator="implicitfast" cone="elliptic" impratio="10"/>
+  <option integrator="implicitfast" cone="elliptic" impratio="10"/>-->
+<!--
+  <custom>
+
+    <numeric data="3000" name="constraint_stiffness"/>
+    <numeric data="50" name="constraint_vel_damping"/>
+    <numeric data="2000" name="constraint_limit_stiffness"/>
+    <numeric data="10" name="solver_maxls"/>
+    <numeric data="10" name="constraint_ang_damping"/>
+    <numeric data="1" name="spring_mass_scale"/>
+    <numeric data="1" name="spring_inertia_scale"/>
+  </custom>
   -->
+
+   <custom>
+      <numeric data="10" name="constraint_ang_damping"/>
+      <numeric data="1.0" name="spring_inertia_scale"/>
+  </custom>
 
   <asset>
     <texture type="2d" file="interbotix_black.png"/>
@@ -44,13 +60,14 @@
   </default>
 
   <worldbody>
-    <light mode="targetbodycom" target="wx250s/gripper_link" pos="1 0 1"/>
-    <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane"/>
+    <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
+    <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 -0.1" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane" />
     <body name="wx250s/base_link" childclass="wx250s">
-      <joint type="slide" stiffness="100" damping="0" frictionloss="0" armature="0"  range="-0.0001 0.0001" name="baseinertia"/>
-      <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="0.538736"
+      <camera name="tracking" mode="fixed" pos="0 -2 2" xyaxes="1 0 0 0 1 1"/>
+      <joint type="slide" stiffness="1000" damping="1000" frictionloss="0" armature="1000"  range="-0.000001 0.000001" name="baseinertia"/>
+      <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="1000.0"
         diaginertia="0.00252518 0.00211519 0.000690737"/>
-      r<geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
+      <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="collision"/>
       <body name="wx250s/shoulder_link" pos="0 0 0.072">
         <inertial pos="2.23482e-05 4.14609e-05 0.0066287" quat="0.0130352 0.706387 0.012996 0.707586" mass="0.480879"
@@ -120,7 +137,7 @@
         <joint armature="0" axis="1 0 0" damping="0" limited="true" name="target_x" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
         <joint armature="0" axis="0 1 0" damping="0" limited="true" name="target_y" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
         <joint armature="0" axis="0 0 1" damping="0" limited="true" name="target_z" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
-        <geom conaffinity="0" contype="0" name="target" pos="0 0 0" size=".009" type="sphere" rgba="1 0 0 1"/>
+        <geom conaffinity="0" contype="0" name="target" pos="0 0 0" size=".009" type="sphere" rgba="0 1 0 1"/>
     </body>
   </worldbody>
 

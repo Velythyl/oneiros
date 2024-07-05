@@ -162,19 +162,22 @@ class WidowReacher(PipelineEnv):
 
     n_frames = 5
 
+    self.scaling = 1.0
     if backend in ['spring', 'positional']:
-      sys = sys.replace(dt=0.001)
+      sys = sys.replace(dt=0.0005)
       #sys = sys.replace(
       #    actuator=sys.actuator.replace(gear=jp.array([25.0, 25.0]))
       #)
-      n_frames = 10
+      n_frames = 20
       # TODO: does the same actuator strength work as in spring
       sys = sys.replace(
           actuator=sys.actuator.replace(
-              gain=sys.actuator.gain.at[-1].set(50),
-              gear=(10 * jp.ones_like(sys.actuator.gear)).at[-1].set(1.).at[0].set(100),
+              #gain=sys.actuator.gain.at[-1].set(50),
+              gear=jp.array([10,5,5,5,5,5,0.01])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
           )
       )
+
+      self.scaling = 100_000
 
     kwargs['n_frames'] = kwargs.get('n_frames', n_frames)
 
@@ -241,6 +244,13 @@ class WidowReacher(PipelineEnv):
 
 
   def step(self, state: State, action: jax.Array) -> State:
+    action = action.clip(-10, 10).at[-1].set(0.02)
+    #action = action.at[0].set(action * self.scaling)
+
+    new_action = (action * self.scaling) #action.at[:-1].set(action[:-1] * SCALING).at[-1].set(action[-1] / SCALING)
+    #new_action = new_action.at[-1].set(action[-1] / self.scaling)
+    action = new_action.at[-1].set(0.02)
+
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
 
     pipeline_state = self.set_target(pipeline_state, state.metrics["target_pos_raw"])

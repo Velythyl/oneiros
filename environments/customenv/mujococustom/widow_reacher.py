@@ -151,6 +151,9 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
 
 
     def step(self, a):
+        a = a.clip(-10, 10)
+        a[-1] = 0.02
+
         vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)
         reward_ctrl = -np.square(a).sum()

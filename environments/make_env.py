@@ -532,6 +532,17 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     """
 
 
+    if DEBUG_VIDEO:
+        NUM_DEBUG_STEPS = 100
+        class Agent:
+            def __init__(self):
+                self.i = 0
+                self.actions = torch.concatenate([torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")[None] for i in range(100)]).detach()
+                self.actions.requires_grad = False
+            def get_action(self, *args):
+                self.i = self.i+1
+                return self.actions[self.i-1]
+
     print("Building eval envs...")
     eval_and_video_envs = []
     for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
@@ -548,10 +559,8 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
 
         if DEBUG_VIDEO:
-            class Agent:
-                def get_action(self, *args):
-                    return torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")
-            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=100,
+
+            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=NUM_DEBUG_STEPS,
                      DO_VIDEO=True, agent=Agent())
 
 

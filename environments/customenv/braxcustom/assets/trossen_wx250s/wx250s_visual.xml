@@ -51,7 +51,7 @@
         <geom type="mesh" contype="0" conaffinity="0" density="0" group="2" material="black"/>
       </default>
       <default class="collision">
-        <geom group="3" type="mesh"/>
+        <geom group="3" type="mesh" contype="0" conaffinity="0"/>
         <default class="sphere_collision">
           <geom type="sphere" size="0.0006" rgba="1 0 0 1"/>
         </default>
@@ -61,12 +61,12 @@
 
   <worldbody>
     <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
-    <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 -0.1" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane" />
+    <geom contype="1" conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane" />
     <body name="wx250s/base_link" childclass="wx250s">
       <camera name="tracking" mode="fixed" pos="0 -2 2" xyaxes="1 0 0 0 1 1"/>
       <joint type="slide" stiffness="1000" damping="1000" frictionloss="0" armature="1000"  range="-0.000001 0.000001" name="baseinertia"/>
-      <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="1000.0"
-        diaginertia="0.00252518 0.00211519 0.000690737"/>
+      <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="20000.0"
+        diaginertia="0.00252518 0.00211519 0.000690737"/> <!-- insanely high mass to fix robot in place -->
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="collision"/>
       <body name="wx250s/shoulder_link" pos="0 0 0.072">
@@ -112,7 +112,7 @@
                       diaginertia="4.79509e-06 3.7467e-06 1.48651e-06"/>
                     <joint name="left_finger" axis="0 1 0" type="slide" range="0.015 0.037"/>
                     <geom pos="0 0.005 0" quat="0 0 0 -1" mesh="wx250s_10_gripper_finger" class="visual"/>
-                    <geom pos="0 0.005 0" quat="0 0 0 -1" mesh="wx250s_10_gripper_finger" class="collision"/>
+                    <geom pos="0 0.005 0" quat="0 0 0 -1" mesh="wx250s_10_gripper_finger" class="collision" contype="1" conaffinity="1"/>
                     <geom name="left/left_g0" pos="0.042 -0.009 0.012" class="sphere_collision"/>
                     <geom name="left/left_g1" pos="0.042 -0.009 -0.012" class="sphere_collision"/>
                   </body>
@@ -121,7 +121,7 @@
                       diaginertia="4.79509e-06 3.7467e-06 1.48651e-06"/>
                     <joint name="right_finger" axis="0 1 0" type="slide" range="-0.037 -0.015"/>
                     <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="visual"/>
-                    <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="collision"/>
+                    <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="collision" contype="1" conaffinity="1"/>
                     <geom name="right/right_g0" pos="0.042 0.009 0.012" class="sphere_collision"/>
                     <geom name="right/right_g1" pos="0.042 0.009 -0.012" class="sphere_collision"/>
                   </body>
@@ -158,6 +158,6 @@
     <position class="wx250s" name="forearm_roll" joint="forearm_roll"/>
     <position class="wx250s" name="wrist_angle" joint="wrist_angle"/>
     <position class="wx250s" name="wrist_rotate" joint="wrist_rotate"/>
-    <position class="wx250s" name="gripper" joint="left_finger" kp="200"/>
+    <position class="wx250s" name="gripper" joint="left_finger" kp="200" /> <!---->
   </actuator>
 </mujoco>

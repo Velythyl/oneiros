@@ -173,7 +173,7 @@ class WidowReacher(PipelineEnv):
       sys = sys.replace(
           actuator=sys.actuator.replace(
               #gain=sys.actuator.gain.at[-1].set(50),
-              gear=jp.array([10,5,5,5,5,5,0.01])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
+              gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
           )
       )
 
@@ -249,7 +249,8 @@ class WidowReacher(PipelineEnv):
 
     new_action = (action * self.scaling) #action.at[:-1].set(action[:-1] * SCALING).at[-1].set(action[-1] / SCALING)
     #new_action = new_action.at[-1].set(action[-1] / self.scaling)
-    action = new_action.at[-1].set(0.02)
+    #action = new_action.at[-1].set(0.02)
+    action = action.at[0:3].set(new_action[0:3])
 
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
 

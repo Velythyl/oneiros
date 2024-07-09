@@ -1,12 +1,12 @@
 env_key:
-  - mujoco-widow
-  - braxgeneralized-widow
-  - braxpositional-widow
   - braxspring-widow
+  - braxpositional-widow
+  - braxgeneralized-widow
   - braxmjx-widow
+  - mujoco-widow
 
 device: cuda
-num_env: 4 #100
+num_env: 2 #100
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo
@@ -15,7 +15,7 @@ action_repeat: None  # todo
 #mat_framestack_instead: False
 
 dr_percent_below: 0.5
-dr_percent_above: 10.0
+dr_percent_above: 2.0
 dr_do_on_reset: True
 dr_do_on_N_step: 1200:5000
 dr_do_at_creation: False

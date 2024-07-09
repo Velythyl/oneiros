@@ -4,8 +4,8 @@ defaults:
   - rl: ppo
   - env_method: vanilla_ppo
   - multienv: brax2brax
-  - env@train_env: go1-with-dr
-  - env@eval_env: go1-with-dr
+  - env@train_env: widow-with-dr
+  - env@eval_env: widow-with-dr
   - rl@ppo: ppo
   - rl@sac: sac
   - rl@rma: rma

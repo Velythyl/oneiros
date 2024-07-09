@@ -1,9 +1,9 @@
 env_key:
   - mujoco-go1
-  #- braxgeneralized-go1
-  #- braxpositional-go1
-  #- braxspring-go1
-  #- braxmjx-go1
+  - braxgeneralized-go1
+  - braxpositional-go1
+  - braxspring-go1
+  - braxmjx-go1
 
 device: cuda
 num_env: 100
@@ -17,5 +17,5 @@ action_repeat: None  # todo
 dr_percent_below: 0.5
 dr_percent_above: 2.0
 dr_do_on_reset: True
-dr_do_on_N_step: 1200:5000
+dr_do_on_N_step: 2000:2001
 dr_do_at_creation: False

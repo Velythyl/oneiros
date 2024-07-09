@@ -2,7 +2,11 @@ import brax
 import gymnasium
 import jax.random
 import numpy as np
+import torch
 from gym import Wrapper
+
+from environments.wrappers.jax_wrappers.domain_randomization import DomainRandWrapper, WritePrivilegedInformationWrapper
+from environments.wrappers.jax_wrappers.vectorgym import VectorGymWrapper
 
 
 class VectorIndexMapWrapper(Wrapper):
@@ -223,6 +227,12 @@ class Go1(_MujocoMapping):
 
     mass: dict = None
 
+class Widow(_MujocoMapping):
+    act: dict = None
+    obs: dict = None
+
+    mass: dict = None
+
 def map_func_lookup(parent_class, brax_envname: str) -> _Mapping:
     get_mapping_class = list(parent_class.__subclasses__())
     get_mapping_class = {str(c).split(".")[-1].split("'")[0].lower(): c for c in get_mapping_class}
@@ -240,16 +250,68 @@ if __name__ == "__main__":
     import brax
     from brax.envs.wrappers.torch import TorchWrapper
 
-    mujoco = gymnasium.make("Pusher-v4", max_episode_steps=1000, autoreset=True)
+    from environments.customenv.braxcustom.widow_reacher import WidowReacher
+    from environments.customenv.mujococustom.widow_reacher import WidowReacher
 
-    brax_env = brax.envs.create(env_name="pusher", episode_length=1000, backend="generalized",
-                                batch_size=16, no_vsys=True)
-    state = brax_env.reset(jax.random.PRNGKey(0))
-    state = brax_env.step(state, jax.numpy.zeros((16, brax_env.action_size)))
 
-    mujoco_mass = mujoco.unwrapped.model.body_mass
-    brax_mass = state.sys.body_mass
+    env = brax.envs.create(env_name="widow", episode_length=1000, backend="mjx",
+                           batch_size=2, no_vsys=False)
 
+    def sample_num(rng):
+        return jax.random.randint(rng, shape=(1,), minval=1200, maxval=5000)[0]
+
+    env = DomainRandWrapper(env,
+                                percent_below=0.5,
+                                percent_above=2.0,
+                                do_on_reset=False,
+                                do_on_N_step=sample_num,
+                                do_at_creation=False,
+                                seed=2
+                                )
+    env = VectorGymWrapper(env, seed=2)
+    env = WritePrivilegedInformationWrapper(env)
+    env = TorchWrapper(env, device="cuda")
+
+    import jax.numpy as jp
+    env.reset()
+    for i in range(1000):
+        env.step(torch.ones(2, env.action_space.shape[-1]).to("cuda")* 0)
+        print(i)
+
+    exit()
+
+
+
+
+
+    ##
+
+
+
+    mujoco = gymnasium.make("Widow", max_episode_steps=1000, autoreset=True)
+
+
+    mujoco_reset_state = mujoco.reset()
+    mujoco_step_state = mujoco.step(action=np.ones_like(mujoco.action_space.sample()) * 0)
+
+    brax_env = brax.envs.create(env_name="widow", episode_length=1000, backend="mjx",
+                                batch_size=2, no_vsys=True)
+
+
+    reset = jax.jit(brax_env.reset)
+    step = jax.jit(brax_env.step)
+    brax_reset_state = reset(jax.random.PRNGKey(0))
+    brax_step_state = step(brax_reset_state, jax.numpy.ones((2, brax_env.action_size))* 0)
+
+
+    #mujoco_mass = mujoco.unwrapped.model.body_mass
+    #brax_mass = state.sys.body_mass
+
+
+    for i in range(1000):
+        step(brax_step_state, jax.numpy.ones((2, brax_env.action_size))* 0)
+        print(i)
+    exit()
     obs, act = map_func_lookup("ant")
 
     x = act(np.arange(8))

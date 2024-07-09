@@ -48,38 +48,39 @@ class MultiPlexEnv(Wrapper):
         return obs_s
 
     def step(self, action):
-        obs_s = []
-        rew_s = []
-        done_s = []
-        info_s = {}
+        with torch.no_grad():
+            obs_s = []
+            rew_s = []
+            done_s = []
+            info_s = {}
 
+            start = 0
+            for i, stop in enumerate(range(self.num_envs_per_env, (1+self.env_list_len) * self.num_envs_per_env, self.num_envs_per_env)):
+                acts = torch.clone(action[start:stop]).detach()
+                acts.requires_grad = False
+                start = stop
 
-        start = 0
-        for i, stop in enumerate(range(self.num_envs_per_env, (1+self.env_list_len) * self.num_envs_per_env, self.num_envs_per_env)):
-            acts = action[start:stop]
-            start = stop
+                obs, rew, done, info = self.env_list[i].step(acts)
+                obs_s.append(obs)
+                rew_s.append(rew)
+                done_s.append(done)
+                info_s.update(info)
 
-            obs, rew, done, info = self.env_list[i].step(acts)
-            obs_s.append(obs)
-            rew_s.append(rew)
-            done_s.append(done)
-            info_s.update(info)
+            obs_s = torch.concat(obs_s)
+            rew_s = torch.concat(rew_s)
+            done_s = torch.concat(done_s)
 
-        obs_s = torch.concat(obs_s)
-        rew_s = torch.concat(rew_s)
-        done_s = torch.concat(done_s)
+            unified_keys = {k: [] for k in self.unify_key_endswiths}
+            for k, v in info_s.items():
+                for key in self.unify_key_endswiths:
+                    if k.endswith(f"#{key}"):
+                        unified_keys[key].append(v)
 
-        unified_keys = {k: [] for k in self.unify_key_endswiths}
-        for k, v in info_s.items():
-            for key in self.unify_key_endswiths:
-                if k.endswith(f"#{key}"):
-                    unified_keys[key].append(v)
-
-        final_unified_keys = {}
-        for k, v in unified_keys.items():
-            if len(v) == 0:
-                continue
-            final_unified_keys[k] = torch.concat(v)
-        info_s.update(final_unified_keys)
+            final_unified_keys = {}
+            for k, v in unified_keys.items():
+                if len(v) == 0:
+                    continue
+                final_unified_keys[k] = torch.concat(v)
+            info_s.update(final_unified_keys)
 
         return obs_s, rew_s, done_s, info_s

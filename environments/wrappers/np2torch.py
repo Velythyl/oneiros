@@ -5,7 +5,9 @@ from gym import Wrapper
 def np2torch(np_arr):
     #np_arr = np.copy(np_arr)
 
-    return torch.from_numpy(np_arr)
+    ret = torch.from_numpy(np_arr).detach()
+    ret.requires_grad = False
+    return ret
 
 def torch2np(torch_t):
     #torch_t = torch.clone(torch_t)

@@ -14,17 +14,19 @@
     <mesh file="wx250s_5_lower_forearm.stl" class="wx250s"/>
     <mesh file="wx250s_6_wrist.stl" class="wx250s"/>
     <mesh file="wx250s_7_gripper.stl" class="wx250s"/>
-    <mesh file="wx250s_7_gripper.stl" class="wx250s"/>
     <mesh file="wx250s_8_gripper_prop.stl" class="wx250s"/>
     <mesh file="wx250s_9_gripper_bar.stl" class="wx250s"/>
     <mesh file="wx250s_10_gripper_finger.stl" class="wx250s"/>
+
+    <texture builtin="checker" height="100" name="texplane" rgb1="0 0 0" rgb2="0.8 0.8 0.8" type="2d" width="100"/>
+    <material name="MatPlane" reflectance="0.5" shininess="1" specular="1" texrepeat="60 60" texture="texplane"/>
   </asset>
 
   <default>
     <default class="wx250s">
       <mesh scale="0.001 0.001 0.001"/>
       <joint axis="0 1 0" frictionloss="0.1" armature="0.1"/>
-      <position kp="50" inheritrange="1"  forcerange="-35 35"/> <!-- dampratio="0.95" -->
+      <position kp="50" inheritrange="1"  forcerange="-35 35"/> <!--  -->
       <default class="visual">
         <geom type="mesh" contype="0" conaffinity="0" density="0" group="2" material="black"/>
       </default>
@@ -38,8 +40,12 @@
   </default>
 
   <worldbody>
-    <light mode="targetbodycom" target="wx250s/gripper_link" pos="1 0 1"/>
+    <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
+    <geom conaffinity="1" condim="3" material="MatPlane" name="floor" pos="0 0 -0.1" rgba="0.8 0.9 0.8 1" size="40 40 40" type="plane"/>
+    <geom conaffinity="0" contype="0" fromto="0 0 0 0 0 0.02" name="root" size=".011" type="capsule"/>
     <body name="wx250s/base_link" childclass="wx250s">
+      <camera name="tracking" mode="fixed" pos="0 -2 2" xyaxes="1 0 0 0 1 1"/>
+      <joint type="slide" stiffness="100" damping="100" frictionloss="0" armature="100"  range="-0.0001 0.0001" name="baseinertia"/>
       <inertial pos="-0.0380446 0.000613892 0.0193354" quat="0.509292 0.490887 -0.496359 0.503269" mass="0.538736"
         diaginertia="0.00252518 0.00211519 0.000690737"/>
       <geom quat="1 0 0 1" mesh="wx250s_1_base" class="visual"/>
@@ -107,6 +113,13 @@
         </body>
       </body>
     </body>
+    <body name="target" pos="0 0 0.01" gravcomp="1">
+        <!-- The joint `ref` attributes are removed for brax. -->
+        <joint armature="0" axis="1 0 0" damping="0" limited="true" name="target_x" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
+        <joint armature="0" axis="0 1 0" damping="0" limited="true" name="target_y" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
+        <joint armature="0" axis="0 0 1" damping="0" limited="true" name="target_z" pos="0 0 0" range="-.66 .66" stiffness="0" type="slide"/>
+        <geom conaffinity="0" contype="0" name="target" pos="0 0 0" size=".009" type="sphere" rgba="0 1 0 1"/>
+    </body>
   </worldbody>
 
   <contact>
@@ -126,8 +139,4 @@
     <position class="wx250s" name="wrist_rotate" joint="wrist_rotate"/>
     <position class="wx250s" name="gripper" joint="left_finger" kp="200"/>
   </actuator>
-
-  <keyframe>
-    <key name="home" qpos="0 -0.96 1.16 0 -0.3 0 0.015 -0.015" ctrl="0 -0.96 1.16 0 -0.3 0 0.015"/>
-  </keyframe>
 </mujoco>

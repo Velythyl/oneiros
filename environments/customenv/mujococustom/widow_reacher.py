@@ -6,6 +6,7 @@ from gymnasium import utils
 from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 
+from environments.customenv.common_utils import random_sphere_numpy_minradius
 
 DEFAULT_CAMERA_CONFIG = {"trackbodyid": 0}
 
@@ -128,24 +129,32 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             "rgb_array",
             "depth_array",
         ],
-        "render_fps": 50,
+        "render_fps": 100,
     }
 
     def __init__(self, **kwargs):
-        utils.EzPickle.__init__(self, **kwargs)
-        observation_space = Box(low=-np.inf, high=np.inf, shape=(11,), dtype=np.float64)
         xml_file  = str(epath.resource_path('environments') / 'customenv/mujococustom/assets/trossen_wx250s/wx250s.xml')
+        utils.EzPickle.__init__(self,
+            xml_file=xml_file,
+                                **kwargs)
+
+
+        observation_space = Box(low=-np.inf, high=np.inf, shape=(21,), dtype=np.float64)
         MujocoEnv.__init__(
             self,
             xml_file,
-            2,
+            5,
             observation_space=observation_space,
             default_camera_config=DEFAULT_CAMERA_CONFIG,
             **kwargs,
         )
 
+
     def step(self, a):
-        vec = self.get_body_com("fingertip") - self.get_body_com("target")
+        a = a.clip(-10, 10)
+        a[-1] = 0.02
+
+        vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)
         reward_ctrl = -np.square(a).sum()
         reward = reward_dist + reward_ctrl
@@ -160,35 +169,37 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             reward,
             False,
             False,
-            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl),
+            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl, target_pos_raw=self.goal, target_pos=self.get_body_com("target"), tip_pos=self.get_body_com("wx250s/right_finger_link")),
         )
+
+    def _random_target(self):
+        """Returns a target location in a random circle slightly above xy plane."""
+        point = random_sphere_numpy_minradius( 0.66, 0.2)
+        point[-1] = np.abs(point[-1]) + 0.01
+        return point
 
     def reset_model(self):
         qpos = (
-            self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq)
+            self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) * 0
             + self.init_qpos
         )
-        while True:
-            self.goal = self.np_random.uniform(low=-0.2, high=0.2, size=2)
-            if np.linalg.norm(self.goal) < 0.2:
-                break
-        qpos[-2:] = self.goal
+        self.goal = self._random_target()
+        qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv
-        )
-        qvel[-2:] = 0
+        ) * 0
+        qvel[-3:] = 0
         self.set_state(qpos, qvel)
         return self._get_obs()
 
     def _get_obs(self):
-        theta = self.data.qpos.flat[:2]
+        self_pos = self.data.qpos.flat[:-3]
+        self_vel = self.data.qvel.flat[:-3]
         return np.concatenate(
             [
-                np.cos(theta),
-                np.sin(theta),
-                self.data.qpos.flat[2:],
-                self.data.qvel.flat[:2],
-                self.get_body_com("fingertip") - self.get_body_com("target"),
+                self_pos,
+                self_vel,
+                self.get_body_com("target")
             ]
         )
 

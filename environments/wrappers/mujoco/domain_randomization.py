@@ -41,7 +41,7 @@ class MujocoDomainRandomization(Wrapper):
                 return val
         elif isinstance(do_on_N_step, tuple) or isinstance(do_on_N_step, list):
             def _thunk():
-                return np.random.uniform(do_on_N_step[0], do_on_N_step[1])
+                return np.random.randint(do_on_N_step[0], do_on_N_step[1])
         self.do_on_N_step = _thunk
         self.current_do_on_N_step = None
 

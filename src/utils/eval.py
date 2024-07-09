@@ -9,6 +9,8 @@ from src.algs.rma import RMAAgent
 def evaluate(nsteps, eval_envs, agent, NUM_STEPS, DO_VIDEO):
     collected_infos = {}
 
+    print(f"Evaluating in {eval_envs}")
+
     def render(env):
         if DO_VIDEO:
             frame = env.render()[0]
@@ -61,3 +63,36 @@ def evaluate(nsteps, eval_envs, agent, NUM_STEPS, DO_VIDEO):
         out.release()
 
     return wandb_logs
+
+
+if __name__ == "__main__":
+    import brax
+    from brax.envs.wrappers.torch import TorchWrapper
+
+    from environments.customenv.braxcustom.widow_reacher import WidowReacher
+    from environments.customenv.mujococustom.widow_reacher import WidowReacher
+
+    env = brax.envs.create(env_name="widow", episode_length=1000, backend="mjx",
+                           batch_size=2, no_vsys=False)
+
+
+    env = DomainRandWrapper(env,
+                            percent_below=0.5,
+                            percent_above=2.0,
+                            do_on_reset=False,
+                            do_on_N_step=sample_num,
+                            do_at_creation=False,
+                            seed=2
+                            )
+    env = VectorGymWrapper(env, seed=2)
+    env = WritePrivilegedInformationWrapper(env)
+    env = TorchWrapper(env, device="cuda")
+
+    import jax.numpy as jp
+
+    env.reset()
+    for i in range(1000):
+        env.step(torch.ones(2, env.action_space.shape[-1]).to("cuda") * 0)
+        print(i)
+
+    exit()

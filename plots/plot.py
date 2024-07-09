@@ -178,8 +178,8 @@ def get_pd(run_dir):
 
     frame = frame[[col for col in frame.columns if any(col.endswith(suffix) for suffix in COLS_TO_KEEP_ENDSWITH)]]
 
-    #if "ant" not in FOUND_ENV:
-    #    shutil.rmtree(run_dir)
+    if "hopper" in FOUND_ENV:
+        shutil.rmtree(run_dir)
 
     return frame, FOUND_ENV
 
@@ -331,11 +331,23 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
 
     def get_vmin_vmax(frame_pre_modifs):
         frame_pre_modifs = frame_pre_modifs.copy()
+        totrew_cols = get_totrew_cols(frame_pre_modifs)
+        #totrew_cols = [col  for col in totrew_cols if "0.5-10.0" in col]
         frame_pre_modifs = pandas.melt(frame_pre_modifs, id_vars=[STATICS.KEY_TRAIN_ENVS, STATICS.KEY_METHOD],
-                                       value_vars=get_totrew_cols(frame_pre_modifs), var_name='Original_Column', value_name="NEW_COL")
+                                       value_vars=totrew_cols, var_name='Original_Column', value_name="NEW_COL")
         frame_pre_modifs = frame_pre_modifs.drop('Original_Column', axis=1)
         HEATMAP_VMAX = frame_pre_modifs.NEW_COL.max()
         HEATMAP_VMIN = frame_pre_modifs.NEW_COL.min()
+
+        if ENV == "reacher" and do_plots:
+            for column in avg_runs.columns:
+                try:
+                    avg_runs[column] = np.clip(avg_runs[column], -10000, HEATMAP_VMAX)
+                    HEATMAP_VMIN = -10000
+                except:
+                    pass
+
+
         return frame_pre_modifs, HEATMAP_VMIN, HEATMAP_VMAX
     HEATMAP_MESH, HEATMAP_VMIN, HEATMAP_VMAX = get_vmin_vmax(avg_runs)
 
@@ -476,6 +488,14 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
         avg_runs = cleanup_evalenvs(avg_runs)
         avg_runs = rename_rew_cols(avg_runs)
 
+        if ENV == "reacher" and do_plots:
+            for column in avg_runs.columns:
+                try:
+                    avg_runs[column] = np.clip(avg_runs[column], -10000, HEATMAP_VMAX)
+                    HEATMAP_VMIN = -10000
+                except:
+                    pass
+
 
 
         avg_runs = filter_df(avg_runs)
@@ -556,6 +576,8 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
 
     if FIVE_GRID:
         assert AGG_METHOD
+
+
 
     if do_plots:
         if AGG_METHOD:
@@ -878,11 +900,12 @@ if __name__ == "__main__":
     DIR = "./runs"
     ENV = "ant"
 
-   # prep_env_checkpoints(DIR)
-    #exit()
+    prep_env_checkpoints(DIR)
+    exit()
 
+    """
     DID_ONE_LEGEND = False
-
+    
     ant = make_heatmap(DIR, "ant", KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, do_plots=False)
     walker = make_heatmap(DIR, "walker2d", KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, do_plots=False)
 
@@ -908,9 +931,10 @@ if __name__ == "__main__":
     MISSING_PPO = set(ant_ppo.index) - set(walker_ppo.index)
 
     MISSING_RMA = set(ant_rma.index) - set(walker_rma.index)
+"""
 
-
-    DO_ENVS = ["ant", "walker"]
+    DO_ENVS = ["ant", "walker", "reacher"]
+    DO_ENVS = ["reacher"]
 
     for ENV in ENVNAMES:
         FOUND = False

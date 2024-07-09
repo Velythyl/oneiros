@@ -18,18 +18,16 @@ import io
 from typing import Optional, List
 
 import brax
-import cv2
+import jax
+import mujoco
 from PIL import Image
 from brax import base, System
 from brax import math
 from brax.envs.base import PipelineEnv, State
-from brax.io import mjcf, html
-from brax.io.image import render, render_array
+from brax.io import mjcf
+from brax.io.image import render_array
 from etils import epath
-import jax
-from imageio.plugins.swf import HTML
 from jax import numpy as jp
-import mujoco
 from tqdm import tqdm
 
 

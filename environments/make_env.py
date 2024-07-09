@@ -483,9 +483,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-
-
-    DEBUG_VIDEO = True
+    DEBUG_VIDEO = False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()
@@ -499,14 +497,6 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         print("...done!")
 
     #KEEP_ALIVE.start_new(train_env)
-
-
-
-
-
-
-
-
 
     """
     # Function to keep the environment alive

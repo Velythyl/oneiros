@@ -177,6 +177,7 @@ class WidowReacher(PipelineEnv):
           )
       )
 
+
       self.scaling = 100_000
 
     kwargs['n_frames'] = kwargs.get('n_frames', n_frames)

@@ -8,8 +8,6 @@ from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 from tqdm import tqdm
 
-import environments.customenv.mujococustom.go1
-
 DEFAULT_CAMERA_CONFIG = {
     "distance": 4.0,
 }

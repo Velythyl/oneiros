@@ -18,5 +18,5 @@ framestack: None
 mat_framestack_instead: None
 
 eval_freq: 10000000
-num_eval_steps: 100
-do_eval_video: True
+num_eval_steps: 500
+do_eval_video: False

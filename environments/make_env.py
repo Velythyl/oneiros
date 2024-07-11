@@ -483,7 +483,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = False
+    DEBUG_VIDEO = True
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()
@@ -496,45 +496,10 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
         print("...done!")
 
-    #KEEP_ALIVE.start_new(train_env)
-
-    """
-    # Function to keep the environment alive
-    def keep_alive(envs, stop_thread, interval=1):
-        while not stop_thread.is_set():
-            for env in envs:
-                env.step(env.action_space.sample())
-                time.sleep(interval)  # Sleep for the given interval before the next step
-
-    def start_thread(envs):
-        # Create and start a thread to run the keep-alive function
-        stop_thread = threading.Event()
-        keep_alive_thread = threading.Thread(target=keep_alive, args=(envs,stop_thread))
-        keep_alive_thread.daemon = True  # Daemonize the thread to exit when the main program exits
-        keep_alive_thread.start()
-        return keep_alive_thread, stop_thread
-
-    def stop_thread(keep_alive_thread, stop_thread):
-        stop_thread.set()  # Signal the thread to stop
-        keep_alive_thread.join()  # Wait for the thread to finish
-
-    se = start_thread([train_env])
-    """
-
-
-    if DEBUG_VIDEO:
-        NUM_DEBUG_STEPS = 100
-        class Agent:
-            def __init__(self):
-                self.i = 0
-                self.actions = torch.concatenate([torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")[None] for i in range(100)]).detach()
-                self.actions.requires_grad = False
-            def get_action(self, *args):
-                self.i = self.i+1
-                return self.actions[self.i-1]
 
     print("Building eval envs...")
     eval_and_video_envs = []
+    DEBUG_ACTION_SEQUENCE = None
     for i, sliced_multiplex in enumerate(splat_multiplex(multienv_cfg.eval)):
         sliced_multiplex = monad_multiplex(sliced_multiplex)
         eval_and_video_envs += [make_multiplex(sliced_multiplex, seed + i + 1)]
@@ -549,8 +514,21 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
 
         if DEBUG_VIDEO:
+            if DEBUG_ACTION_SEQUENCE is None:
+                DEBUG_ACTION_SEQUENCE = torch.concatenate(
+                            [torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")[None] for i in
+                             range(100)]).detach()
+            class Agent:
+                def __init__(self):
+                    self.i = 0
+                    self.actions = DEBUG_ACTION_SEQUENCE
+                    self.actions.requires_grad = False
 
-            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=NUM_DEBUG_STEPS,
+                def get_action(self, *args):
+                    self.i = self.i + 1
+                    return self.actions[self.i - 1]
+
+            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=100,
                      DO_VIDEO=True, agent=Agent())
 
 
@@ -590,7 +568,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         func = functools.partial(evaluate, eval_envs=_env, NUM_STEPS=multienv_cfg.num_eval_steps,
                           DO_VIDEO=multienv_cfg.do_eval_video)
 
-        hooks.append(KeepAliveHook(_env, func))
+        hooks.append(func)
     all_hooks = EveryN2(hook_steps, hooks)
 
     def close_all_envs():

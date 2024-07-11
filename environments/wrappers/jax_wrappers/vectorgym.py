@@ -95,12 +95,23 @@ class VectorGymWrapper(gym.vector.VectorEnv):
         self._key = jax.random.PRNGKey(seed)
 
     def render(self, mode='human'):
+        def render(camera_index):
+            camera = self._cameras[camera_index]
+
+            sys, state = self._env.sys, self._state
+            if state is None:
+                raise RuntimeError('must call reset or step before rendering')
+
+            state_for_rendering = take0(state.pipeline_state)
+            frame = image.render_array(sys, state_for_rendering, 480, 480, camera=camera)
+            return frame
+
+
         if not self._camera_found:
             works = []
             for i, cam in enumerate(self._cameras):
                 try:
-                    self._camera_index = i
-                    self.render("rgb_array")
+                    render(i)
                     works.append(True)
                 except:
                     works.append(False)
@@ -110,14 +121,7 @@ class VectorGymWrapper(gym.vector.VectorEnv):
 
 
         if mode == 'rgb_array':
-            sys, state = self._env.sys, self._state
-            if state is None:
-                raise RuntimeError('must call reset or step before rendering')
-
-            state_for_rendering = take0(state.pipeline_state)
-            frame = image.render_array(sys, state_for_rendering, 480, 480, camera=self._cameras[self._camera_index])
-
-            return frame
+            return render(self._camera_index)
         else:
             return super().render(mode=mode)  # just raise an exception
 

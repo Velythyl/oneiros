@@ -174,7 +174,7 @@ class WidowReacher(PipelineEnv):
       sys = sys.replace(
           actuator=sys.actuator.replace(
               #gain=sys.actuator.gain.at[-1].set(50),
-              gear=jp.array([5,4,2,2,2,2,0.00001]) #gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
+              gear=jp.array([5,3,2,2,2,2,0.00001]) #gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
           )
       )
 

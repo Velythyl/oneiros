@@ -31,7 +31,7 @@
     <numeric data="10000" name="constraint_limit_stiffness"/>
     <numeric data="20000" name="constraint_stiffness"/>
     <numeric data="1 1 1 1 1 1 1 1 1 1" name="constraint_ang_damping"/>
-    <numeric data="-0.25" name="constraint_vel_damping"/>
+    <numeric data="0.1" name="constraint_vel_damping"/> <!-- -0.1 -->
     <numeric data="1.0" name="baumgarte_erp"/>
     <numeric data="0.5" name="spring_mass_scale"/> <!-- 0.5 -->
     <numeric data="0.8" name="spring_inertia_scale"/>

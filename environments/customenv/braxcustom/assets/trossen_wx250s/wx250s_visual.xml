@@ -1,6 +1,6 @@
 <mujoco model="wx250s">
   <compiler angle="radian" meshdir="simplifiedassets" texturedir="simplifiedassets" autolimits="true"/>
-
+  <option timestep="0.001" iterations="20" integrator="Euler" />
   <!--
   <option integrator="implicitfast" cone="elliptic" impratio="10"/>-->
 <!--
@@ -14,11 +14,28 @@
     <numeric data="1" name="spring_mass_scale"/>
     <numeric data="1" name="spring_inertia_scale"/>
   </custom>
-  -->
 
+
+  -->
+  <!--
    <custom>
-      <numeric data="10" name="constraint_ang_damping"/>
-      <numeric data="1.0" name="spring_inertia_scale"/>
+     <numeric data="5000" name="constraint_stiffness"/>
+    <numeric data="5000" name="constraint_limit_stiffness"/>
+    <numeric data="1.0" name="spring_inertia_scale"/>
+    <numeric data="-5 5 5 5 5 5 5 5 5 5" name="constraint_ang_damping"/>
+     <numeric data="-0.1" name="ang_damping"/>
+    <numeric data="0.5" name="baumgarte_erp"/>
+  </custom>-->
+
+  <custom>
+    <numeric data="10000" name="constraint_limit_stiffness"/>
+    <numeric data="20000" name="constraint_stiffness"/>
+    <numeric data="1 1 1 1 1 1 1 1 1 1" name="constraint_ang_damping"/>
+    <numeric data="-0.25" name="constraint_vel_damping"/>
+    <numeric data="1.0" name="baumgarte_erp"/>
+    <numeric data="0.5" name="spring_mass_scale"/> <!-- 0.5 -->
+    <numeric data="0.8" name="spring_inertia_scale"/>
+    <numeric data="50" name="solver_maxls"/>
   </custom>
 
   <asset>
@@ -57,7 +74,7 @@
         </default>
       </default>
       <default class="nocollision">
-        <geom group="3" type="mesh" contype="0" conaffinity="0"/>
+        <geom group="3" type="mesh"/> <!-- contype="0" conaffinity="0"/> -->
         <default class="sphere_nocollision">
           <geom type="sphere" size="0.0006" rgba="1 0 0 1"/>
         </default>

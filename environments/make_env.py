@@ -514,10 +514,13 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
 
         if DEBUG_VIDEO:
+            NUM_DEBUG_STEPS = 200
+            np.random.seed(1)
             if DEBUG_ACTION_SEQUENCE is None:
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(
-                            [torch.from_numpy(eval_and_video_envs[-1].action_space.sample()).to("cuda")[None] for i in
-                             range(100)]).detach()
+                            [torch.from_numpy(np.random.uniform(low=-10, high=10, size=eval_and_video_envs[-1].action_space.shape[1:])[None]).to("cuda")[None] for i in
+                             range(NUM_DEBUG_STEPS)]).detach()
+
             class Agent:
                 def __init__(self):
                     self.i = 0
@@ -528,7 +531,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
                     self.i = self.i + 1
                     return self.actions[self.i - 1]
 
-            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=100,
+            evaluate(nsteps=0, eval_envs=eval_and_video_envs[-1], NUM_STEPS=NUM_DEBUG_STEPS,
                      DO_VIDEO=True, agent=Agent())
 
 

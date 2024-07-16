@@ -160,27 +160,28 @@ class WidowReacher(PipelineEnv):
     path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_visual.xml'
     sys = mjcf.load(path)
 
-    n_frames = 5
+    n_frames = 16
 
     self.scaling = 1.0
     if backend in ['spring', 'positional']:
+        #0.0001 166
       sys = sys.replace(dt=0.0005)
       #sys = sys.replace(
       #    actuator=sys.actuator.replace(gear=jp.array([25.0, 25.0]))
       #)
-      n_frames = 20
+      n_frames = 33
       # TODO: does the same actuator strength work as in spring
       sys = sys.replace(
           actuator=sys.actuator.replace(
               #gain=sys.actuator.gain.at[-1].set(50),
-              gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
+              gear=jp.array([5,4,2,2,2,2,0.00001]) #gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
           )
       )
 
 
-      self.scaling = 100_000
+      #self.scaling = 100_000
 
-    kwargs['n_frames'] = kwargs.get('n_frames', n_frames)
+    kwargs['n_frames'] = n_frames
 
     super().__init__(sys=sys, backend=backend, **kwargs)
 
@@ -248,10 +249,10 @@ class WidowReacher(PipelineEnv):
     action = action.clip(-10, 10).at[-1].set(0.02)
     #action = action.at[0].set(action * self.scaling)
 
-    new_action = (action * self.scaling) #action.at[:-1].set(action[:-1] * SCALING).at[-1].set(action[-1] / SCALING)
+    #new_action = (action * self.scaling) #action.at[:-1].set(action[:-1] * SCALING).at[-1].set(action[-1] / SCALING)
     #new_action = new_action.at[-1].set(action[-1] / self.scaling)
     #action = new_action.at[-1].set(0.02)
-    action = action.at[0:3].set(new_action[0:3])
+    #action = action.at[0:3].set(new_action[0:3])
 
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
 

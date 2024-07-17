@@ -483,7 +483,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = True
+    DEBUG_VIDEO = False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()
@@ -514,7 +514,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
 
         if DEBUG_VIDEO:
-            NUM_DEBUG_STEPS = 10
+            NUM_DEBUG_STEPS = 100
             np.random.seed(1)
             if DEBUG_ACTION_SEQUENCE is None:
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(

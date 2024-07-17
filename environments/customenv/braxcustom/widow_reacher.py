@@ -157,7 +157,7 @@ class WidowReacher(PipelineEnv):
 
 
   def __init__(self, backend='generalized', **kwargs):
-    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_visual.xml'
+    path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes.xml'
     sys = mjcf.load(path)
 
     n_frames = 16

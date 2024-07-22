@@ -177,9 +177,9 @@ def gen_eval_gamut(eval_cfgs):
         #print(GET_LOW)
         #print(GET_HIGH)
 
+        # todo make set_low and set_high part of the env config
         SET_LOW = 0.5
-        SET_HIGH = GET_HIGH
-        assert SET_HIGH in [10.0, 2.0]
+        SET_HIGH = 2.0 if "widow" in eval_cfgs["env_key"][0] else 10.0
         assert (GET_LOW == GET_HIGH == 1.0) or (GET_LOW == SET_LOW and GET_HIGH == SET_HIGH)
 
         SCALE_HIGH = 2

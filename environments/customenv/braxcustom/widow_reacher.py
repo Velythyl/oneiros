@@ -160,7 +160,7 @@ class WidowReacher(PipelineEnv):
     path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes.xml'
     sys = mjcf.load(path)
 
-    n_frames = 16
+    n_frames = 2
 
     self.scaling = 1.0
     if backend in ['spring', 'positional']:   #

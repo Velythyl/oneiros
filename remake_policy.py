@@ -3,4 +3,6 @@ import torch
 
 net = jit.load('model_scripted.pt')
 
-x=0
+input = torch.randn((1,21 + 7)).cuda()
+
+net(input)

@@ -175,12 +175,12 @@
   </equality>
 
   <actuator>
-    <position class="wx250s" name="waist" joint="waist"/>
-    <position class="wx250s" name="shoulder" joint="shoulder"/>
-    <position class="wx250s" name="elbow" joint="elbow"/>
-    <position class="wx250s" name="forearm_roll" joint="forearm_roll"/>
-    <position class="wx250s" name="wrist_angle" joint="wrist_angle"/>
-    <position class="wx250s" name="wrist_rotate" joint="wrist_rotate"/>
+    <position class="wx250s" name="waist" joint="waist"  kp="75" kv="5"/>
+    <position class="wx250s" name="shoulder" joint="shoulder"  kp="75" kv="5"/>
+    <position class="wx250s" name="elbow" joint="elbow"  kp="75" kv="5"/>
+    <position class="wx250s" name="forearm_roll" joint="forearm_roll"  kp="75" kv="5"/>
+    <position class="wx250s" name="wrist_angle" joint="wrist_angle"  kp="75" kv="5"/>
+    <position class="wx250s" name="wrist_rotate" joint="wrist_rotate"  kp="75" kv="5"/>
     <position class="wx250s" name="gripper" joint="left_finger" kp="200" /> <!---->
   </actuator>
 </mujoco>

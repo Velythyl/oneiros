@@ -514,7 +514,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
         gc.collect()
 
         if DEBUG_VIDEO:
-            NUM_DEBUG_STEPS = 100
+            NUM_DEBUG_STEPS = 500
             np.random.seed(1)
             if DEBUG_ACTION_SEQUENCE is None:
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(

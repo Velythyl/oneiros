@@ -178,8 +178,8 @@ def get_pd(run_dir):
 
     frame = frame[[col for col in frame.columns if any(col.endswith(suffix) for suffix in COLS_TO_KEEP_ENDSWITH)]]
 
-    if "hopper" in FOUND_ENV:
-        shutil.rmtree(run_dir)
+    #if "hopper" in FOUND_ENV:
+    #    shutil.rmtree(run_dir)
 
     return frame, FOUND_ENV
 
@@ -187,7 +187,7 @@ def get_pd(run_dir):
 def list_runs(runs_dir):
     return os.listdir(runs_dir)
 
-ENVNAMES = ["ant", "hopper", "walker2d", "inverted_double_pendulum", "reacher"]
+ENVNAMES = ["ant", "hopper", "walker2d", "inverted_double_pendulum", "reacher", "widow"]
 
 
 def read_env(runs_dir, env):
@@ -323,7 +323,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
     COLS_TO_KEEP = list(set(COLS_TO_KEEP))
 
     cropped_df = big_df[[*COLS_TO_KEEP]].dropna()
-    only_last_eval = cropped_df.groupby(STATICS.KEY_RUN_DIR).tail(3)
+    only_last_eval = cropped_df.groupby(STATICS.KEY_RUN_DIR).head(2).groupby(STATICS.KEY_RUN_DIR).tail(1) #.dropna().tail(1)
     only_last_eval = only_last_eval[[STATICS.KEY_TRAIN_ENVS, STATICS.KEY_METHOD, *COLS_TO_KEEP_EVAL]]
 
     avg_runs = only_last_eval
@@ -454,8 +454,11 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
             "0.2525-0.2535": " LOW P",
             "1.0-1.0": "  MID P",
             "0.5-10.0": "  MID D",
+            "0.5-2.0": "  MID D",
             "15.0-15.1": "HIGH P",
-            "10.0-20.0": "HIGH D"
+            "10.0-20.0": "HIGH D",
+            "2.0-4.0": "HIGH D",
+            "3.0-3.1": "HIGH P",
         }
 
         EVAL_COL_REPLACE = list_eval_cols(frame)
@@ -474,7 +477,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
         frame = rename_rew_cols(frame)
         return frame
 
-    def do_heatmapp(avg_runs, title):
+    def do_heatmapp(avg_runs, title, vmin, vmax):
         if KEY == STATICS.KEY_TRAIN_ENVS:
             avg_runs = avg_runs.groupby(STATICS.KEY_TRAIN_ENVS, sort=False).mean()
         elif KEY == STATICS.KEY_NUM_TRAIN_ENVS:
@@ -491,8 +494,8 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
         if ENV == "reacher" and do_plots:
             for column in avg_runs.columns:
                 try:
-                    avg_runs[column] = np.clip(avg_runs[column], -10000, HEATMAP_VMAX)
-                    HEATMAP_VMIN = -10000
+                    avg_runs[column] = np.clip(avg_runs[column], -10000, vmax)
+                    vmin = -10000
                 except:
                     pass
 
@@ -538,7 +541,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
         cmap = LinearSegmentedColormap.from_list('custom_cmap', colors)
         cmap.set_bad(color='none')
 
-        heatmap = seaborn.heatmap(avg_runs, annot=False, xticklabels=True, yticklabels=True, ax=ax, cmap=cmap, cbar=False, cbar_kws={'shrink': 0.4}, vmin=HEATMAP_VMIN, vmax=HEATMAP_VMAX)
+        heatmap = seaborn.heatmap(avg_runs, annot=False, xticklabels=True, yticklabels=True, ax=ax, cmap=cmap, cbar=False, cbar_kws={'shrink': 0.4}, vmin=vmin, vmax=vmax)
         heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0)
 
         from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -612,7 +615,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
 
                     #title = f"{ENV}: Aggregated simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
 
-                do_heatmapp(do_this_one, title=title)
+                do_heatmapp(do_this_one, title=title, vmin=HEATMAP_VMIN, vmax=HEATMAP_VMAX)
         else:
             for method in tqdm(avg_runs[STATICS.KEY_METHOD].unique(), desc=f"Heatmaps KEY={KEY}, DEDUP={DEDUP}, AGG={AGG_METHOD}"):
                 do_this_one = avg_runs[avg_runs[STATICS.KEY_METHOD] == method]
@@ -631,7 +634,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
                         title = f"{ENV}: ({method}) Performance on all simulators (train & test set)"
 
                     #title = f"{ENV}: {method}'s aggregated simulator transfer " + ("(raw)" if not DEDUP else "(dedup)")
-                do_heatmapp(do_this_one, title=title)
+                do_heatmapp(do_this_one, title=title, vmin=HEATMAP_VMIN, vmax=HEATMAP_VMAX)
 
     avg_runs = avg_runs[[KEY, STATICS.KEY_METHOD, *get_totrew_cols(avg_runs)]]
     return cleanup_evalenvs(avg_runs)
@@ -900,8 +903,8 @@ if __name__ == "__main__":
     DIR = "./runs"
     ENV = "ant"
 
-    prep_env_checkpoints(DIR)
-    exit()
+   # prep_env_checkpoints(DIR)
+   # exit()
 
     """
     DID_ONE_LEGEND = False
@@ -933,8 +936,8 @@ if __name__ == "__main__":
     MISSING_RMA = set(ant_rma.index) - set(walker_rma.index)
 """
 
-    DO_ENVS = ["ant", "walker", "reacher"]
-    DO_ENVS = ["reacher"]
+    DO_ENVS = ["widow"]#, "ant", "walker", "reacher"]
+    #DO_ENVS = ["reacher"]
 
     for ENV in ENVNAMES:
         FOUND = False
@@ -954,6 +957,7 @@ if __name__ == "__main__":
         #make_avgeval_allavg_linechart(DIR, ENV, DEDUP=False, ONLY_TRAIN=False)
 
        # exit()
+        """
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, FIVE_GRID=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
@@ -968,7 +972,7 @@ if __name__ == "__main__":
 
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
-
+"""
         #make_manyeval_linechart(DIR, DEDUP=False)
         #make_manyeval_linechart(DIR, DEDUP=True)
 

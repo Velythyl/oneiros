@@ -92,13 +92,13 @@ class PPO(_Alg):
         self.max_grad_norm = max_grad_norm
         self.target_kl = target_kl
 
-    def save(self, path):
+    def save(self, path, prefix=None):
         from torch import jit
 
         self.agent.eval()
         x = torch.ones(self.train_envs.ONEIROS_METADATA.single_observation_space).to(self.device)[None]
         net_trace = jit.trace(self.agent, x)
-        jit.save(net_trace, f'{path}/model_scripted.pt')
+        jit.save(net_trace, f'{path}/{"" if prefix is None else str(prefix)}model_scripted.pt')
         self.agent.train()
 
         #model_scripted = torch.jit.script(self.agent)  # Export to TorchScript

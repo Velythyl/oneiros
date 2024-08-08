@@ -17,6 +17,6 @@ action_repeat: None
 framestack: None
 mat_framestack_instead: None
 
-eval_freq: 10000000
+eval_freq: 10_000
 num_eval_steps: 500
 do_eval_video: False

@@ -1,8 +1,8 @@
 env_key:
-  - braxspring-widow
-  - braxpositional-widow
-  - braxgeneralized-widow
   - braxmjx-widow
+  - braxspring-widow
+  - braxgeneralized-widow
+  - braxpositional-widow
   - mujoco-widow
 
 device: cuda

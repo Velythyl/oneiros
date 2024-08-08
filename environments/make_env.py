@@ -520,6 +520,9 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(
                             [torch.from_numpy(np.random.uniform(low=-10, high=10, size=eval_and_video_envs[-1].action_space.shape[1:])[None]).to("cuda")[None] for i in
                              range(NUM_DEBUG_STEPS)]).detach()
+                DEBUG_ACTION_SEQUENCE[:,:,0] = torch.pi
+
+
 
             class Agent:
                 def __init__(self):

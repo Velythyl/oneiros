@@ -6,7 +6,7 @@ from gymnasium import utils
 from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 
-from environments.customenv.common_utils import random_sphere_numpy_minradius
+from environments.customenv.common_utils import random_sphere_numpy
 
 DEFAULT_CAMERA_CONFIG = {"trackbodyid": 0}
 
@@ -151,12 +151,26 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
 
 
     def step(self, a):
-        a = a.clip(-10, 10)
-        a[-1] = 0.02
+        ranges = [
+            [-3.14158, 3.14158],
+            [-1.88496, 1.98968],
+            [-2.14675, 1.6057],
+            [-3.14158, 3.14158],
+            [-1.74533, 2.14675],
+            [-3.14158, 3.14158],
+            [0.015, 0.037]
+        ]
+        ranges = np.array(ranges)
+
+        # delta_action = action - state.metrics["last_action"]
+        # action = state.metrics["last_action"] + jp.clip(delta_action, 0.01*ranges[:,0], 0.1*ranges[:,1])
+        action = np.clip(a, 0.9 * ranges[:, 0], 0.9 * ranges[:, 1])
+        action[-1] = 0.02
+
 
         vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)
-        reward_ctrl = -np.square(a).sum()
+        reward_ctrl = -np.linalg.norm(a - self.last_action) # 0 * -np.square(a).sum()
         reward = reward_dist + reward_ctrl
 
         self.do_simulation(a, self.frame_skip)
@@ -174,7 +188,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
 
     def _random_target(self):
         """Returns a target location in a random circle slightly above xy plane."""
-        point = random_sphere_numpy_minradius( 0.66, 0.2)
+        point = random_sphere_numpy( 0.3, 0.6, shape=(1,))[0]
         point[-1] = np.abs(point[-1]) + 0.01
         return point
 
@@ -190,6 +204,8 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         ) * 0
         qvel[-3:] = 0
         self.set_state(qpos, qvel)
+        self.last_action = np.zeros(self.action_space.shape)
+
         return self._get_obs()
 
     def _get_obs(self):

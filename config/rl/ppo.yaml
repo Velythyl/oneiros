@@ -2,7 +2,7 @@
 
 alg: "ppo"
 
-total_timesteps: 75_000_000 #1_000_000
+total_timesteps: 1000 # 75_000_000 #1_000_000
 test_episodes: 5
 test_steps: 1000
 anneal_lr: False

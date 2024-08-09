@@ -322,7 +322,7 @@ class WidowReacher(PipelineEnv):
     # vector from tip to target is last 3 entries of obs vector
     reward_dist = -math.safe_norm(target_pos - tip_pos) # charlie todo fixme
     reward_ctrl = -math.safe_norm(action - state.metrics["last_action"]) #0.0 #-jp.square(action).sum()
-    reward = reward_dist + reward_ctrl
+    reward = reward_dist # + 0 * reward_ctrl
 
     state.metrics.update(
         reward_dist=reward_dist,

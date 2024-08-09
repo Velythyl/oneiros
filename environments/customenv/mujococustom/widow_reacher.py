@@ -171,7 +171,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
         reward_dist = -np.linalg.norm(vec)
         reward_ctrl = -np.linalg.norm(a - self.last_action) # 0 * -np.square(a).sum()
-        reward = reward_dist + reward_ctrl
+        reward = reward_dist # + 0 * reward_ctrl
 
         self.do_simulation(a, self.frame_skip)
         if self.render_mode == "human":

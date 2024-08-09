@@ -154,12 +154,12 @@
   </equality>
 
   <actuator><!-- kp="75" kv="5" -->
-    <position forcerange="-6 6" kv="5" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-10 10" kv="5" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
-    <position forcerange="-10 10" kv="10" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
-    <position forcerange="-2 2" kv="10" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position  forcerange="-2 2" kv="10" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
-    <position  forcerange="-2 2" kv="10" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position  forcerange="-2 2" kv="10" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/> <!---->
+    <position forcerange="-35 35" kv="5" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kv="5" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kv="10" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kv="10" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position  forcerange="-35 35" kv="10" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
+    <position  forcerange="-35 35" kv="10" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position  forcerange="-35 35" kv="10" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/> <!---->
   </actuator>
 </mujoco>

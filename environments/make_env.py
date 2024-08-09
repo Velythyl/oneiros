@@ -483,7 +483,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = False
+    DEBUG_VIDEO = True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()

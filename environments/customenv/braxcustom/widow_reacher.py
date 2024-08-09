@@ -163,13 +163,15 @@ class WidowReacher(PipelineEnv):
     elif backend in ['positional', "spring"]:
       path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_pospring.xml'
       sys = mjcf.load(path)
-    else:
-      path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes.xml'
+    elif backend in ['generalized']:
+      path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_generalized.xml'
       sys = mjcf.load(path)
+    else:
+      raise AssertionError(f"Backend `{backend}` not found")
 
     #n_frames = 2
-    sys = sys.replace(dt=0.002)
-    n_frames = 8
+    sys = sys.replace(dt=0.016)
+    n_frames = 1
 
     self.scaling = 1.0
     if backend in ['spring', 'positional']:   #
@@ -190,6 +192,7 @@ class WidowReacher(PipelineEnv):
       #)
 
     if backend in ['generalized']:  #
+        pass
         # 0.0001 166
 
         #sys = sys.replace(dt=0.002)
@@ -199,12 +202,12 @@ class WidowReacher(PipelineEnv):
         # )
         #n_frames = 8
         # TODO: does the same actuator strength work as in spring
-        sys = sys.replace(
-           actuator=sys.actuator.replace(
-               #gain=sys.actuator.gain.at[-1].set(50),
-               gear=jp.array([0.25,0.25,0.25,0.25,0.25,0.25,0.00001]) #gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
-           )
-        )
+        #sys = sys.replace(
+        #   actuator=sys.actuator.replace(
+        #       #gain=sys.actuator.gain.at[-1].set(50),
+        #       gear=jp.array([0.25,0.25,0.25,0.25,0.25,0.25,0.00001]) #gear=jp.array([10,5,5,5,2,2,0.0001])#jp.ones_like(sys.actuator.gear).at[-1].set(0.01).at[0].set(10).at[2].set(10), # 5, 10, 100
+        #   )
+        #)
 
     if backend in ['mjx']:  #
         pass

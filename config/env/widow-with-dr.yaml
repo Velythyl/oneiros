@@ -22,7 +22,7 @@ action_repeat: None  # todo
 #mat_framestack_instead: False
 
 dr_percent_below: 0.5
-dr_percent_above: 10.0
+dr_percent_above: 2.0
 dr_do_on_reset: True
 dr_do_on_N_step: 1200:5000
 dr_do_at_creation: False

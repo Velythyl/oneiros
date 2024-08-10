@@ -375,7 +375,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 
         import gym
         def nan_to_num(x):
-            return torch.nan_to_num(torch.nan_to_num(x, nan=-np.inf), neginf=-100_000)
+            return torch.nan_to_num(torch.nan_to_num(x, nan=-np.inf), neginf=-1000, posinf=1000)
         class NanToNumObs(gym.Wrapper):
             def reset(self, **kwargs):
                 return nan_to_num(self.env.reset(**kwargs))

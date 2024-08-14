@@ -1,4 +1,5 @@
 import gymnasium
+import jax.random
 import numpy as np
 from etils import epath
 
@@ -150,7 +151,11 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         )
 
 
+        self.goal = np.array([0.3, 0, 0.3])
+
+
     def step(self, a):
+        """
         ranges = [
             [-3.14158, 3.14158],
             [-1.88496, 1.98968],
@@ -166,12 +171,15 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         # action = state.metrics["last_action"] + jp.clip(delta_action, 0.01*ranges[:,0], 0.1*ranges[:,1])
         action = np.clip(a, 0.9 * ranges[:, 0], 0.9 * ranges[:, 1])
         action[-1] = 0.02
+        """
+        #a = np.cos(a)
 
+        #self.goal = self._random_target() if np.all((np.random.randint(0, 500, size=(1,)) == 1)) else self.goal
 
-        vec = self.get_body_com("wx250s/right_finger_link") - self.get_body_com("target")
+        vec = self.get_body_com("wx250s/gripper_link") - self.goal
         reward_dist = -np.linalg.norm(vec)
-        reward_ctrl = -np.linalg.norm(a - self.last_action) # 0 * -np.square(a).sum()
-        reward = reward_dist # + 0 * reward_ctrl
+        reward_ctrl = -np.linalg.norm(a) # 0 * -np.square(a).sum()
+        reward = reward_dist  #+  reward_ctrl
 
         self.do_simulation(a, self.frame_skip)
         if self.render_mode == "human":
@@ -183,13 +191,15 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             reward,
             False,
             False,
-            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl, target_pos_raw=self.goal, target_pos=self.get_body_com("target"), tip_pos=self.get_body_com("wx250s/right_finger_link")),
+            dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl, target_pos_raw=self.goal, target_pos=self.goal, tip_pos=self.get_body_com("wx250s/gripper_link")),
         )
 
     def _random_target(self):
+        return np.array([0.3, 0, 0.3])
+
         """Returns a target location in a random circle slightly above xy plane."""
         point = random_sphere_numpy( 0.3, 0.6, shape=(1,))[0]
-        point[-1] = np.abs(point[-1]) + 0.01
+        point[-1] = np.clip(np.abs(point[-1]), 0.1, 0.6)
         return point
 
     def reset_model(self):
@@ -197,7 +207,6 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) * 0
             + self.init_qpos
         )
-        self.goal = self._random_target()
         qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv
@@ -215,7 +224,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             [
                 self_pos,
                 self_vel,
-                self.get_body_com("target")
+                self.goal
             ]
         )
 

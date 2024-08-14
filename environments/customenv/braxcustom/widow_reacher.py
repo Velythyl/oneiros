@@ -160,8 +160,12 @@ class WidowReacher(PipelineEnv):
     if backend in ['mjx']:
       path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_mjx.xml'
       sys = mjcf.load(path)
-    elif backend in ['positional', "spring"]:
+    elif backend in ["spring"]:
       path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_pospring.xml'
+      sys = mjcf.load(path)
+    elif backend in ['positional']:
+      path = epath.resource_path(
+          'environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_pos.xml'
       sys = mjcf.load(path)
     elif backend in ['generalized']:
       path = epath.resource_path('environments') / 'customenv/braxcustom/assets/trossen_wx250s/wx250s_boxes_generalized.xml'
@@ -231,6 +235,7 @@ class WidowReacher(PipelineEnv):
 
 
   def reset(self, sys: System, rng: jax.Array) -> State:
+    key, rng = jax.random.split(rng)
     rng, rng1, rng2 = jax.random.split(rng, 3)
 
     q = sys.init_q + jax.random.uniform(
@@ -241,7 +246,7 @@ class WidowReacher(PipelineEnv):
     ) * 0
 
     # set the target q, qd
-    _, target = self._random_target(rng)
+    target =  self._random_target(rng)
     q = q.at[-3:].set(target)
     qd = qd.at[-3:].set(0)
 
@@ -250,17 +255,21 @@ class WidowReacher(PipelineEnv):
     pipeline_state = self.pipeline_init(sys, q, qd)
 
 
-    obs = self._get_obs(pipeline_state)
+    obs = self._get_obs(pipeline_state, target)
     reward, done, zero = jp.zeros(3)
+    reward = -math.safe_norm(target - self.tip_pos(pipeline_state))
     metrics = {
-        'reward_dist': zero,
+        'reward_dist': reward,
         'reward_ctrl': zero,
-        'target_pos': self.target_pos(pipeline_state),
+        #'target_pos': self.target_pos(pipeline_state),
         'target_pos_raw': target,
         'tip_pos': self.tip_pos(pipeline_state),
         "last_action": jp.zeros(self.action_size)
     }
-    return State(pipeline_state, obs, reward, done, sys, metrics)
+
+    state = State(pipeline_state, obs, reward, done, sys, metrics)
+
+    return state
 
   def set_target(self, pipeline_state, target):
       q, qd = pipeline_state.q, pipeline_state.qd
@@ -272,6 +281,7 @@ class WidowReacher(PipelineEnv):
 
 
   def tip_pos(self, pipeline_state):
+      return pipeline_state.x.pos[-4]
       tip_pos = (
           pipeline_state.x.take(-2)
           .do(base.Transform.create(pos=jp.array([0., 0, 0])))
@@ -281,6 +291,8 @@ class WidowReacher(PipelineEnv):
 
 
   def target_pos(self, pipeline_state):
+      return False
+      return pipeline_state.x.pos[-1]
       tip_pos = (
           pipeline_state.x.take(-1)
           .do(base.Transform.create(pos=jp.array([0., 0, 0])))
@@ -291,6 +303,9 @@ class WidowReacher(PipelineEnv):
 
 
   def step(self, state: State, action: jax.Array) -> State:
+    action = action.at[-2:].set(0)
+
+    """
     ranges = [
       [-3.14158, 3.14158],
       [-1.88496, 1.98968],
@@ -299,42 +314,59 @@ class WidowReacher(PipelineEnv):
       [-1.74533, 2.14675],
       [-3.14158, 3.14158],
       [0.015, 0.037]
-    ]
+  ]
     ranges = jp.array(ranges)
 
-    #delta_action = action - state.metrics["last_action"]
-    #action = state.metrics["last_action"] + jp.clip(delta_action, 0.01*ranges[:,0], 0.1*ranges[:,1])
-    action = jp.clip(action, 0.9* ranges[:, 0], 0.9*ranges[:, 1]).at[-1].set(0.02)
+    def recenter_action(a, r1r2):
+        return r1r2[0] + ((a + 1) / 2) * (r1r2[1]-r1r2[0])
 
+    action = jp.cos(action)
+    action = jax.vmap(recenter_action)(action, ranges)
+    """
+
+    """
+    key = state.vsys_rng
+    key, rng = jax.random.split(key)
+    state = state.replace(vsys_rng=key)
+    new_target = self._random_target(rng)
+
+    key = state.vsys_rng
+    key, rng = jax.random.split(key)
+    state = state.replace(vsys_rng=key)
+    new_target = jax.lax.cond(
+        (jax.random.randint(rng, shape=(1,), minval=0, maxval=500) == 1).all(),
+        lambda old, new: new,
+        lambda old, new: old,
+        state.metrics["target_pos_raw"], new_target
+    )
+
+    state.metrics["target_pos_raw"].update(new_target)
+    """
 
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
-
     pipeline_state = self.set_target(pipeline_state, state.metrics["target_pos_raw"])
-    #pipeline_state = pipeline_state.replace(qd=pipeline_state.qd.at[-3:].set(0))
 
-    obs = self._get_obs(pipeline_state)
-
-    target_pos = self.target_pos(pipeline_state)  # target state
-    tip_pos = self.tip_pos(pipeline_state)
-    # fixme what is this x.take(1) even doing? why not just theta.q[-6:-3]?
-
-
+    obs = self._get_obs(pipeline_state, state.metrics["target_pos_raw"])
     # vector from tip to target is last 3 entries of obs vector
-    reward_dist = -math.safe_norm(target_pos - tip_pos) # charlie todo fixme
+    reward_dist = -math.safe_norm(state.metrics["target_pos_raw"] - self.tip_pos(pipeline_state)) # charlie todo fixme
     reward_ctrl = -math.safe_norm(action - state.metrics["last_action"]) #0.0 #-jp.square(action).sum()
-    reward = reward_dist # + 0 * reward_ctrl
+    reward = reward_dist # * 10 # + 0 * reward_ctrl
+
+    #self.tip_pos(pipeline_state)
+
+    #reward = jp.exp(reward) * 10
 
     state.metrics.update(
         reward_dist=reward_dist,
         reward_ctrl=reward_ctrl,
-        target_pos=self.target_pos(pipeline_state),
+       # target_pos=self.target_pos(pipeline_state),
         tip_pos=self.tip_pos(pipeline_state),
         last_action=action
     )
 
     return state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)
 
-  def _get_obs(self, pipeline_state: base.State) -> jax.Array:
+  def _get_obs(self, pipeline_state: base.State, target_pos_raw) -> jax.Array:
     """Returns egocentric observation of target and arm body."""
 
     self_pos = pipeline_state.q[:-3]
@@ -343,14 +375,25 @@ class WidowReacher(PipelineEnv):
     return jp.concatenate([
         self_pos,
         self_vel,
-        pipeline_state.q[-3:]
+        target_pos_raw,
+     # target_pos_raw - self.tip_pos(pipeline_state)
     ])
 
+  def target_first_quad(self, rng):
+      point = self._random_target(rng)
+      point = point.at[0].set(jp.clip(jp.abs(point[0]), 0.1, 0.6))
+
+
   def _random_target(self, rng: jax.Array) -> Tuple[jax.Array, jax.Array]:
+    return jp.array([0.3,0,0.3])
+
     """Returns a target location in a random circle slightly above xy plane."""
     key, rng = jax.random.split(rng)
     point = random_sphere_jax(rng, min_r=0.3, max_r=0.6, shape=(1,))[0]
-    return key, point.at[-1].set(jp.abs(point[-1]) + 0.01)
+    point = point.at[-2].set(0)
+    return point.at[-1].set(jp.clip(jp.abs(point[-1]), 0.1, 0.6))
+
+
 
 import brax
 def register(name, clazz):

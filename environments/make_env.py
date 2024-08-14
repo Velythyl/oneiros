@@ -383,7 +383,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 
                 action = nan_to_num(action) #torch.nan_to_num(torch.nan_to_num(action, nan=-np.inf))
                 rets = super().step(action)
-                return nan_to_num(rets[0]), rets[1], rets[2], rets[3]
+                return nan_to_num(rets[0]), nan_to_num(rets[1]), rets[2], rets[3]
 
         base_envs[i] = NanToNumObs(env)
 
@@ -483,7 +483,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = False #True #False
+    DEBUG_VIDEO = True # True # False #True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()
@@ -520,7 +520,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(
                             [torch.from_numpy(np.random.uniform(low=-10, high=10, size=eval_and_video_envs[-1].action_space.shape[1:])[None]).to("cuda")[None] for i in
                              range(NUM_DEBUG_STEPS)]).detach()
-                DEBUG_ACTION_SEQUENCE[:,:,0] = torch.pi
+                #DEBUG_ACTION_SEQUENCE[:,:,0] = torch.pi * 10
 
 
 

@@ -258,6 +258,7 @@ class WidowReacher(PipelineEnv):
         last_action=action
     )
 
+    """
     # RESAMPLE TARGET
     key = state.vsys_rng
     key, rng = jax.random.split(key)
@@ -277,7 +278,8 @@ class WidowReacher(PipelineEnv):
 
     # HANDLE NEW TARGET
     pipeline_state = self.set_target_body(pipeline_state, new_target)
-    obs = self._get_obs(pipeline_state, new_target)
+    """
+    obs = self._get_obs(pipeline_state, self.get_target_pos(state))
 
     state = state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)
 

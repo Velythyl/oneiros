@@ -151,7 +151,8 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         )
 
 
-        self.goal = np.array([0.3, 0, 0.3])
+        self.initial_goal = np.array([0.3, 0, 0.3])
+        self.goal = self.initial_goal
         self.step_count = 0
 
 
@@ -171,14 +172,14 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             self.render()
 
         #if self.step_count > 30_000:
-        #if False:
-        cond = np.all(np.random.randint(0, 250, size=(1,)) == 1)
-        if cond:
-            self.goal = self._random_target()
-            qpos, qvel = self.data.qpos, self.data.qvel
-            qpos[-3:] = self.goal
-            qvel[-3:] = 0
-            self.set_state(qpos, qvel)
+        if False:
+            cond = np.all(np.random.randint(0, 250, size=(1,)) == 1)
+            if cond:
+                self.goal = self._random_target()
+                qpos, qvel = self.data.qpos, self.data.qvel
+                qpos[-3:] = self.goal
+                qvel[-3:] = 0
+                self.set_state(qpos, qvel)
 
         ob = self._get_obs()
         return (
@@ -200,6 +201,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) * 0
             + self.init_qpos
         )
+        self.goal = self.initial_goal
         qpos[-3:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
             low=-0.005, high=0.005, size=self.model.nv

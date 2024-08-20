@@ -201,6 +201,8 @@ def gen_eval_gamut(eval_cfgs):
             COPY["dr_percent_below"] = percents[0]
             COPY["dr_percent_above"] = percents[1]
 
+            #COPY["num_env"] = COPY["num_env"] // 2
+
             final_eval_cfgs += [COPY]
 
     # now merge 'em

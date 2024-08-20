@@ -49,7 +49,7 @@ def do_exp(cfg):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".30"
+    #os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".30"
 
     RUN_NAME = envkey_runname_multienv(cfg.multienv)
     TAGS = envkey_tags_multienv(cfg.multienv)

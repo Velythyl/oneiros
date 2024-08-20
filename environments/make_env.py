@@ -79,6 +79,20 @@ def make_brax(brax_cfg, seed):
     env = WritePrivilegedInformationWrapper(env)
     env = TorchWrapper(env, device=brax_cfg.device)
 
+    if "widow" in envkey_multiplex(brax_cfg):
+        class RemoveCounter(gym.Wrapper):
+            def __init__(self, env):
+                super().__init__(env)
+                self.observation_space = gym.spaces.Box(low=self.env.observation_space.low[:,1:], high=self.env.observation_space.high[:,1:])
+
+            def reset(self):
+                return super().reset()[:,1:]
+
+            def step(self, action):
+                ret = super().step(action)
+                return ret[0][:,1:], *ret[1:]
+        env = RemoveCounter(env)
+
     def detach(tensor):
         try:
             tensor = tensor.detach()
@@ -483,7 +497,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = True # True # False #True #False
+    DEBUG_VIDEO = True #False # True # True # False #True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()

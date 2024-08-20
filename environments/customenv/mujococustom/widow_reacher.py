@@ -152,29 +152,15 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
 
 
         self.goal = np.array([0.3, 0, 0.3])
+        self.step_count = 0
 
 
     def step(self, a):
-        """
-        ranges = [
-            [-3.14158, 3.14158],
-            [-1.88496, 1.98968],
-            [-2.14675, 1.6057],
-            [-3.14158, 3.14158],
-            [-1.74533, 2.14675],
-            [-3.14158, 3.14158],
-            [0.015, 0.037]
-        ]
-        ranges = np.array(ranges)
+        self.step_count += 1
 
-        # delta_action = action - state.metrics["last_action"]
-        # action = state.metrics["last_action"] + jp.clip(delta_action, 0.01*ranges[:,0], 0.1*ranges[:,1])
-        action = np.clip(a, 0.9 * ranges[:, 0], 0.9 * ranges[:, 1])
-        action[-1] = 0.02
-        """
-        #a = np.cos(a)
+        a = np.cos(a)
 
-        #self.goal = self._random_target() if np.all((np.random.randint(0, 500, size=(1,)) == 1)) else self.goal
+
 
         vec = self.get_body_com("wx250s/gripper_link") - self.goal
         reward_dist = -np.linalg.norm(vec)
@@ -184,6 +170,11 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         self.do_simulation(a, self.frame_skip)
         if self.render_mode == "human":
             self.render()
+
+        if self.step_count > 20_000:
+            cond = np.all(np.random.randint(0, 500, size=(1,)) == 1)
+            if cond:
+                self.goal = self._random_target()
 
         ob = self._get_obs()
         return (
@@ -195,8 +186,6 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         )
 
     def _random_target(self):
-        return np.array([0.3, 0, 0.3])
-
         """Returns a target location in a random circle slightly above xy plane."""
         point = random_sphere_numpy( 0.3, 0.6, shape=(1,))[0]
         point[-1] = np.clip(np.abs(point[-1]), 0.1, 0.6)

@@ -70,13 +70,13 @@
         <geom type="mesh" contype="0" conaffinity="0" density="0" group="2" material="black"/>
       </default>
       <default class="collision">
-        <geom group="3" type="mesh"/>
+        <geom group="3" type="mesh" contype="1" conaffinity="1"/>
         <default class="sphere_collision">
           <geom type="sphere" size="0.0006" rgba="1 0 0 1"/>
         </default>
       </default>
       <default class="nocollision">
-        <geom group="3" type="mesh" contype="0" conaffinity="0"/>
+        <geom group="3" type="mesh" contype="1" conaffinity="1"/>
         <default class="sphere_nocollision">
           <geom type="sphere" size="0.0006" rgba="1 0 0 1"/>
         </default>
@@ -99,13 +99,13 @@
           diaginertia="0.000588946 0.000555655 0.000378999"/>
         <joint name="waist" axis="0 0 1" range="-3.14158 3.14158"/>
         <geom pos="0 0 -0.003" quat="1 0 0 1" mesh="wx250s_2_shoulder" class="visual"/>
-        <geom pos="0 0 -0.003" quat="1 0 0 1" mesh="wx250s_2_shoulder" class="nocollision"/>
+        <geom pos="0 0 -0.003" quat="1 0 0 1" mesh="wx250s_2_shoulder" class="collision"/>
         <body name="wx250s/upper_arm_link" pos="0 0 0.03865">
           <inertial pos="0.0171605 2.725e-07 0.191323" quat="0.705539 0.0470667 -0.0470667 0.705539" mass="0.430811"
             diaginertia="0.00364425 0.003463 0.000399348"/>
           <joint name="shoulder" range="-1.88496 1.98968"/>
           <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="visual"/>
-          <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="nocollision"/>
+          <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="collision"/>
           <body name="wx250s/upper_forearm_link" pos="0.04975 0 0.25">
             <inertial pos="0.107963 0.000115876 0" quat="0.000980829 0.707106 -0.000980829 0.707106" mass="0.234589"
               diaginertia="0.000888 0.000887807 3.97035e-05"/>
@@ -117,7 +117,7 @@
                 diaginertia="0.0001834 0.000172527 5.88633e-05"/>
               <joint name="forearm_roll" axis="1 0 0" range="-3.14158 3.14158"/>
               <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="visual"/>
-              <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="nocollision"/>
+              <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="collision"/>
               <body name="wx250s/wrist_link" pos="0.075 0 0">
                 <inertial pos="0.04236 -1.0663e-05 0.010577" quat="0.608721 0.363497 -0.359175 0.606895" mass="0.084957"
                   diaginertia="3.29057e-05 3.082e-05 2.68343e-05"/>
@@ -138,8 +138,8 @@
                     <joint name="left_finger" axis="0 1 0" type="slide" range="0.015 0.037"/>
                     <geom pos="0 0.005 0" quat="0 0 0 -1" mesh="wx250s_10_gripper_finger" class="visual"/>
                     <geom pos="0 0.005 0" quat="0 0 0 -1" mesh="wx250s_10_gripper_finger" class="collision"/>
-                    <geom name="left/left_g0" pos="0.042 -0.009 0.012" class="sphere_collision"/>
-                    <geom name="left/left_g1" pos="0.042 -0.009 -0.012" class="sphere_collision"/>
+                    <!--<geom name="left/left_g0" pos="0.042 -0.009 0.012" class="sphere_collision"/>
+                    <geom name="left/left_g1" pos="0.042 -0.009 -0.012" class="sphere_collision"/>-->
                   </body>
                   <body name="wx250s/right_finger_link" pos="0.066 0 0">
                     <inertial pos="0.013816 0 0" quat="0.705384 0.705384 0.0493271 0.0493271" mass="0.016246"
@@ -147,8 +147,8 @@
                     <joint name="right_finger" axis="0 1 0" type="slide" range="-0.037 -0.015"/>
                     <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="visual"/>
                     <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="collision"/>
-                    <geom name="right/right_g0" pos="0.042 0.009 0.012" class="sphere_collision"/>
-                    <geom name="right/right_g1" pos="0.042 0.009 -0.012" class="sphere_collision"/>
+                    <!--<geom name="right/right_g0" pos="0.042 0.009 0.012" class="sphere_collision"/>
+                    <geom name="right/right_g1" pos="0.042 0.009 -0.012" class="sphere_collision"/>-->
                   </body>
                 </body>
               </body>
@@ -190,13 +190,24 @@
 
   -->
 
-  <actuator><!-- kp="75" kv="5" -->
+  <actuator>
+    <motor forcerange="-35 35"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="75" class="wx250s" name="waist" joint="waist"/>
+    <motor forcerange="-35 35"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="75" class="wx250s" name="shoulder" joint="shoulder" />
+    <motor forcerange="-35 35"   ctrllimited="true" ctrlrange="-1.0 1.0" gear="75" class="wx250s" name="elbow" joint="elbow" />
+    <motor forcerange="-35 35"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="75" class="wx250s" name="forearm_roll" joint="forearm_roll" />
+    <motor forcerange="-35 35"   ctrllimited="true" ctrlrange="-1.0 1.0" gear="75" class="wx250s" name="wrist_angle" joint="wrist_angle" />
+    <motor forcerange="-0.1 0.1"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="wrist_rotate" joint="wrist_rotate" />
+    <motor forcerange="-0.1 0.1"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="gripper" joint="left_finger" />
+  </actuator>
+
+  <!--
+  <actuator>
     <position kv="2" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
     <position kv="2" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
     <position kv="2" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
     <position kv="2" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
     <position kv="2" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
     <position kv="2" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/> <!---->
-  </actuator>
+    <position kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/>
+  </actuator>-->
 </mujoco>

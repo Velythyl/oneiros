@@ -159,8 +159,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         self.step_count += 1
 
         a = np.cos(a)
-
-
+        a[-2:] = 0
 
         vec = self.get_body_com("wx250s/gripper_link") - self.goal
         reward_dist = -np.linalg.norm(vec)
@@ -171,10 +170,15 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
         if self.render_mode == "human":
             self.render()
 
-        if self.step_count > 20_000:
-            cond = np.all(np.random.randint(0, 500, size=(1,)) == 1)
-            if cond:
-                self.goal = self._random_target()
+        #if self.step_count > 30_000:
+        #if False:
+        cond = np.all(np.random.randint(0, 250, size=(1,)) == 1)
+        if cond:
+            self.goal = self._random_target()
+            qpos, qvel = self.data.qpos, self.data.qvel
+            qpos[-3:] = self.goal
+            qvel[-3:] = 0
+            self.set_state(qpos, qvel)
 
         ob = self._get_obs()
         return (

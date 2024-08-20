@@ -79,7 +79,7 @@ def make_brax(brax_cfg, seed):
     env = WritePrivilegedInformationWrapper(env)
     env = TorchWrapper(env, device=brax_cfg.device)
 
-    if "widow" in envkey_multiplex(brax_cfg):
+    if False: # "widow" in envkey_multiplex(brax_cfg):
         class RemoveCounter(gym.Wrapper):
             def __init__(self, env):
                 super().__init__(env)
@@ -497,7 +497,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = True #False # True # True # False #True #False
+    DEBUG_VIDEO = False # True #False # True # True # False #True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()

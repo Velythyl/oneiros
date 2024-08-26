@@ -342,6 +342,10 @@ class KeepAlive:
         self.threads = []
 
 def make_multiplex(multiplex_env_cfg, seed):
+    if "widow" in multiplex_env_cfg.env_key[0]:
+        WIDOW_RANDOM_STEPS = 500
+        multiplex_env_cfg.max_episode_length = [WIDOW_RANDOM_STEPS + l for l in multiplex_env_cfg.max_episode_length]
+
     #KEEP_ALIVE = KeepAlive()
 
     base_envs = []
@@ -355,6 +359,19 @@ def make_multiplex(multiplex_env_cfg, seed):
 
     base_envs = list(filter(lambda x: x is not None, base_envs))
     assert len(base_envs) == num_multiplex(multiplex_env_cfg)
+
+    if "widow" in multiplex_env_cfg.env_key[0]:
+        for i, (env, envkey) in enumerate(zip(base_envs, multiplex_env_cfg.env_key)):
+            if "brax" in envkey:
+                brax_or_mujoco = True
+            else:
+                brax_or_mujoco = False
+                assert "mujoco" in envkey
+
+            from environments.wrappers.envspecific.widow import WidowRandomPosition
+            base_envs[i] = WidowRandomPosition(env, brax_or_mujoco, WIDOW_RANDOM_STEPS, device=multiplex_env_cfg.device[0])
+
+
 
     def single_action_space(env):
         return env.action_space.shape[1:]
@@ -497,7 +514,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = False # True #False # True # True # False #True #False
+    DEBUG_VIDEO = False # True # False # True #False # True # True # False #True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()

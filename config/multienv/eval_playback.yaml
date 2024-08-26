@@ -21,4 +21,4 @@ eval_freq: 1
 num_eval_steps: 500
 do_eval_video: True
 
-eval_playback: /home/charlie/Downloads/widowdebug
+eval_playback: /home/charlie/Downloads/temp/offline-run-20240819_191206-0o3bwcnj/files

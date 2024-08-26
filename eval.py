@@ -82,14 +82,30 @@ def do_exp(cfg):
 
     # torch.backends.cudnn.deterministic = True # Potential Variable
 
+    playback = cfg.multienv.eval_playback
+    if playback.endswith(".pt"):
+        todo_files = [playback]
+    else:
+        todo_files = []
+        for root, dirs, files in os.walk(playback):
+            for file in files:
+                if file.endswith(".pt"):
+                    todo_files += [os.path.join(root, file)]
+
+
     from environments.make_env import make_sim2sim
     cfg.multienv.train.num_env = [1]*len(cfg.multienv.train.num_env)
     cfg.multienv.eval.num_env = [1] * len(cfg.multienv.train.num_env)
+
+
+
 
     train_envs, all_hooks, close_all_envs = make_sim2sim(cfg.multienv, seed, get_save_path())
 
     logging.info("==========Begin trainning the Agent==========")
 
+
+    action_history = []
     def playback_pt(i, pt_file):
         from torch import jit
         agent = jit.load(pt_file, map_location="cpu").cuda()
@@ -107,24 +123,17 @@ def do_exp(cfg):
 
                     return agent(obs, None)
                 act = get_act(obs)
+                action_history[-1].append(act)
                # print(act)
                 return act
 
+        # one sublist per policy
+        action_history.append([])
         all_hooks.step(i, Agent(agent))
-
-
-    playback = cfg.multienv.eval_playback
-    if playback.endswith(".pt"):
-        todo_files = [playback]
-    else:
-        todo_files = []
-        for root, dirs, files in os.walk(playback):
-            for file in files:
-                if file.endswith(".pt"):
-                    todo_files += [os.path.join(root, file)]
+        action_history[-1] = torch.stack(action_history[-1]).squeeze().reshape(cfg.multienv.num_eval_steps,len(action_history[-1]) // cfg.multienv.num_eval_steps, -1)
 
     for i, playback_file in enumerate(todo_files):
-        playback_pt(i, playback_file)
+        playback_pt(i+1, playback_file)
 
         playback_file_name = playback_file.split("/")[-1].split(".")[0]
 
@@ -137,6 +146,10 @@ def do_exp(cfg):
                                      file.replace(f"{i+1}_", f"{playback_file_name}_")
                                      )
                     )
+
+    action_history = torch.stack(action_history)
+    print(action_history.shape)
+    torch.save(action_history, "/home/charlie/Downloads/action_history.pt")
 
 
     close_all_envs()

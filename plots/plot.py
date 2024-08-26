@@ -323,7 +323,7 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
     COLS_TO_KEEP = list(set(COLS_TO_KEEP))
 
     cropped_df = big_df[[*COLS_TO_KEEP]].dropna()
-    only_last_eval = cropped_df.groupby(STATICS.KEY_RUN_DIR).head(2).groupby(STATICS.KEY_RUN_DIR).tail(1) #.dropna().tail(1)
+    only_last_eval = cropped_df.groupby(STATICS.KEY_RUN_DIR).tail(3) #.head(2).groupby(STATICS.KEY_RUN_DIR).tail(1) #.dropna().tail(1)
     only_last_eval = only_last_eval[[STATICS.KEY_TRAIN_ENVS, STATICS.KEY_METHOD, *COLS_TO_KEEP_EVAL]]
 
     avg_runs = only_last_eval
@@ -547,12 +547,18 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         mesh = ax.pcolormesh(HEATMAP_MESH[["NEW_COL"]].values, cmap=cmap)
         divider = make_axes_locatable(ax)
-        cbar_size = (0.5 / avg_runs.shape[-1]) * 100
+        cbar_size = (0.1 / avg_runs.shape[-1]) * 100
         #print(cbar_size)
         cax = divider.append_axes("right", size=f"{cbar_size}%", pad=0.05)
         # Get the images on an axis
         #ax.collections[-1].colorbar.remove()
         cb = plt.colorbar(mesh, cax=cax)
+
+        vrange = (cb.vmax - cb.vmin)
+        ypad = 0.05 * vrange
+        cb.set_ticks([cb.vmin + ypad, cb.vmax - ypad])  # Set the ticks at the min and max values
+        cb.set_ticklabels(['Low', 'High'])  # Set custom tick labels
+        #cb.ax.xaxis.set_tick_params(pad=-15)
         cb.outline.set_visible(False)
         #ax.xticks(rotation=90)
         #plt.yticks(rotation=0)
@@ -596,14 +602,14 @@ def make_heatmap(DIR, ENV, KEY, DEDUP=False, AGG_METHOD=False, do_plots=True, ON
                 if KEY == STATICS.KEY_TRAIN_ENVS:
                     if DEDUP:
                         if FIVE_GRID:
-                            title = f" {ENV} ({STRING}): Transferability to test simulators"
+                            title = f" {ENV} ({STRING})"
                         else:
-                            title = f"{ENV} ({STRING}): Transfer to test simulators"
+                            title = f"{ENV} ({STRING})"
                     else:
                         if FIVE_GRID:
-                            title = f" {ENV} ({STRING}): Transferability of simulators"
+                            title = f" {ENV} ({STRING})"
                         else:
-                            title = f"{ENV} ({STRING}): Transfer to all simulators"
+                            title = f"{ENV} ({STRING})"
 
                     #title = f"{ENV}: Performance on held out Simulator transfer averaged over all methods " + ("(raw)" if not DEDUP else "(dedup)")
                 elif KEY == STATICS.KEY_NUM_TRAIN_ENVS:
@@ -730,7 +736,9 @@ def make_linechart_per_sim(DIR,ENV, DEDUP, DO_LEGEND):
                          ax=ax,
                          hue="Original_Column",
                          palette=pal,#vapeplot.palette("avanti"),
-                         linestyle="dashed",
+                         #linestyle="dashed",
+                         style=True,
+                         dashes=[(2,10)],
                          legend=False
                          )
 
@@ -778,17 +786,18 @@ def make_linechart_per_sim(DIR,ENV, DEDUP, DO_LEGEND):
         #    title = f"{ENV}: Performance on all simulators (train & test set)"
 
 
-        title = f"{ENV}: Impact of training {method} in more simulators"
+        title = f"{ENV}: sim+sim for {method}"
         ax.set_title(title)
         ax.set_xlabel(f"Number of training simulators" )
         ax.set_ylabel("Average total evaluation reward")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.yaxis.set_major_formatter(matplotlib.ticker.EngFormatter())
 
         #labels = list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
         #plt.legend(title='Method', loc='upper left', labels=labels, handles=new_handles[0])
 
         os.makedirs(f"saved_plots/{ENV}/line_per_sim", exist_ok=True)
-        plt.savefig(f"saved_plots/{ENV}/line_per_sim/{title}_legend{DO_LEGEND}.pdf")
+        plt.savefig(f"saved_plots/{ENV}/line_per_sim/{title}_legend{DO_LEGEND}.pdf", bbox_inches="tight")
 
         plt.close(fig) #plt.show()
 
@@ -835,7 +844,9 @@ def make_avgeval_allavg_linechart(DIR,ENV, DEDUP, ONLY_TRAIN, DO_LEGEND):
                      ax=ax,
                      hue=STATICS.KEY_METHOD,
                      palette=pal,#vapeplot.palette("avanti"),
-                     linestyle="dashed",
+                     # linestyle="dashed",
+                     style=True,
+                     dashes=[(2, 10)],
                      legend=False
                      )
 
@@ -876,11 +887,11 @@ def make_avgeval_allavg_linechart(DIR,ENV, DEDUP, ONLY_TRAIN, DO_LEGEND):
     #new_handles = [handles[0][4:], handles[1][4:]]
 
     if DEDUP and not ONLY_TRAIN:
-        title = f"{ENV}: Performance on held out simulators (test set)"
+        title = f"{ENV}: Test set"
     elif DEDUP and ONLY_TRAIN:
-        title = f"{ENV}: Performance on training simulators (train set)"
+        title = f"{ENV}: Train set"
     else:
-        title = f"{ENV}: Performance on all simulators (train & test set)"
+        title = f"{ENV}: Train & Test set"
 
 
     #title = f"{ENV}: Aggregated simulator transfer "+ ("(raw)" if not DEDUP else "(dedup)")
@@ -888,12 +899,13 @@ def make_avgeval_allavg_linechart(DIR,ENV, DEDUP, ONLY_TRAIN, DO_LEGEND):
     ax.set_xlabel(f"Number of training simulators" )
     ax.set_ylabel("Average total evaluation reward")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.yaxis.set_major_formatter(matplotlib.ticker.EngFormatter())
 
     #labels = list(set(list(map(lambda m: m.split("); ")[-1], WITH_DR.METHOD.tolist()))))
     #plt.legend(title='Method', loc='upper left', labels=labels, handles=new_handles[0])
 
     os.makedirs(f"saved_plots/{ENV}", exist_ok=True)
-    plt.savefig(f"saved_plots/{ENV}/{title}_legend{DO_LEGEND}.pdf")
+    plt.savefig(f"saved_plots/{ENV}/{title}_legend{DO_LEGEND}.pdf", bbox_inches="tight")
 
     plt.close(fig) #plt.show()
 
@@ -903,8 +915,8 @@ if __name__ == "__main__":
     DIR = "./runs"
     ENV = "ant"
 
-   # prep_env_checkpoints(DIR)
-   # exit()
+    #prep_env_checkpoints(DIR)
+    #exit()
 
     """
     DID_ONE_LEGEND = False
@@ -936,7 +948,9 @@ if __name__ == "__main__":
     MISSING_RMA = set(ant_rma.index) - set(walker_rma.index)
 """
 
-    DO_ENVS = ["widow"]#, "ant", "walker", "reacher"]
+
+
+    DO_ENVS = ["ant", "walker", "reacher"] #, "ant", "walker", "reacher"]
     #DO_ENVS = ["reacher"]
 
     for ENV in ENVNAMES:
@@ -957,22 +971,36 @@ if __name__ == "__main__":
         #make_avgeval_allavg_linechart(DIR, ENV, DEDUP=False, ONLY_TRAIN=False)
 
        # exit()
-        """
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
+
+        font_size = 20
+        params = {
+            "axes.labelsize": font_size,
+            "legend.fontsize": font_size,
+            "xtick.labelsize": font_size,
+            "ytick.labelsize": font_size,
+            "axes.titlesize": font_size,
+            "text.usetex": True,
+            "figure.figsize": [10, 10],
+        }
+
+        matplotlib.rcParams.update(params)
+
+
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
         make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True, FIVE_GRID=True)
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False)
-        make_heatmap(DIR,ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True)
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=False)
+        #make_heatmap(DIR,ENV, KEY=STATICS.KEY_TRAIN_ENVS, DEDUP=True)
 
 
 
-        make_heatmap(DIR,ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False)
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True)
+        #make_heatmap(DIR,ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False)
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True)
 
 
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
-        make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
-"""
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=False, AGG_METHOD=True)
+        #make_heatmap(DIR, ENV, KEY=STATICS.KEY_NUM_TRAIN_ENVS, DEDUP=True, AGG_METHOD=True)
+
         #make_manyeval_linechart(DIR, DEDUP=False)
         #make_manyeval_linechart(DIR, DEDUP=True)
 
@@ -982,6 +1010,20 @@ if __name__ == "__main__":
        # make_avgeval_linechart(DIR, DEDUP=False)
         #make_avgeval_linechart(DIR, DEDUP=True)
 
+        font_size = 25
+        params = {
+            "axes.labelsize": font_size,
+            "legend.fontsize": 15,
+            "xtick.labelsize": font_size,
+            "ytick.labelsize": font_size,
+            "axes.titlesize": font_size,
+            "text.usetex": True,
+            "figure.figsize": [5, 5],
+        }
+
+        matplotlib.rcParams.update(params)
+
+
         make_linechart_per_sim(DIR, ENV, DEDUP=True, DO_LEGEND=True)
         make_linechart_per_sim(DIR, ENV, DEDUP=True, DO_LEGEND=False)
 
@@ -989,6 +1031,7 @@ if __name__ == "__main__":
         make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=True, DO_LEGEND=True)
         make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=False, DO_LEGEND=False)
         make_avgeval_allavg_linechart(DIR, ENV, DEDUP=True, ONLY_TRAIN=True, DO_LEGEND=False)
+
         # exit()
 
     exit()

@@ -183,11 +183,12 @@ class WidowReacher(PipelineEnv):
       n_frames = 8
 
     if backend in ['generalized']:
-        sys = sys.replace(dt=0.004)
-        n_frames = 4
+        sys = sys.replace(dt=0.002)
+        n_frames = 8
 
     if backend in ['mjx']:  #
-        pass
+      sys = sys.replace(dt=0.016 / 2)
+      n_frames = 2
 
     kwargs['n_frames'] = n_frames
 
@@ -243,8 +244,8 @@ class WidowReacher(PipelineEnv):
   def step(self, state: State, action: jax.Array) -> State:
 
     # HANDLE ACTION
-    action = jax.lax.cos(action)
-    action = action.at[-2:].set(0)
+    #action = jax.lax.cos(action)
+    #action = action.at[-2:].set(0) * 0.2
 
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
     pipeline_state = self.set_target_body(pipeline_state, self.get_target_pos(state))
@@ -258,27 +259,6 @@ class WidowReacher(PipelineEnv):
         last_action=action
     )
 
-    """
-    # RESAMPLE TARGET
-    key = state.vsys_rng
-    key, rng = jax.random.split(key)
-    state = state.replace(vsys_rng=key)
-    sphere_target = self._random_target(rng)
-
-    # get_gaussian_target = jax.random.randint(rng, shape=(1,), minval=0, maxval=500) == 1
-    cond = (
-        jax.random.randint(rng, shape=(1,), minval=0, maxval=250) == 1
-    ).all()
-    new_target = jax.lax.cond(
-        cond,
-        lambda old, new: new,
-        lambda old, new: old,
-        self.get_target_pos(state), sphere_target
-    )
-
-    # HANDLE NEW TARGET
-    pipeline_state = self.set_target_body(pipeline_state, new_target)
-    """
     obs = self._get_obs(pipeline_state, self.get_target_pos(state))
 
     state = state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)

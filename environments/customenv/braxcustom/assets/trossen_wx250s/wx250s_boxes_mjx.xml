@@ -1,6 +1,6 @@
 <mujoco model="wx250s">
   <compiler angle="radian" texturedir="simplifiedassets" autolimits="true"/>
-  <option timestep="0.005" iterations="20" integrator="Euler" />
+  <option timestep="0.005" iterations="120" integrator="Euler" />
 
   <custom>
     <numeric data="10000" name="constraint_limit_stiffness"/>
@@ -158,11 +158,11 @@
   </equality>
 
   <actuator><!-- kp="75" kv="5" -->
-    <motor forcerange="-35 35" class="wx250s" name="waist" joint="waist"   ctrlrange="-1 1" ctrllimited="true" gear="150"/>
+    <motor forcerange="-35 35" class="wx250s" name="waist" joint="waist"   ctrlrange="-1 1" ctrllimited="true" gear="75"/>
     <motor forcerange="-35 35"  class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1 1" ctrllimited="true" gear="150"/>
     <motor forcerange="-35 35"  class="wx250s" name="elbow" joint="elbow"  ctrlrange="-1 1" ctrllimited="true" gear="150"/>
-    <motor forcerange="-35 35" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-1 1" ctrllimited="true" gear="150"/>
-    <motor  forcerange="-35 35" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1 1" ctrllimited="true" gear="150"/>
+    <motor forcerange="-35 35" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-1 1" ctrllimited="true" gear="75"/>
+    <motor  forcerange="-35 35" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1 1" ctrllimited="true" gear="75"/>
     <motor  forcerange="-1 1"  class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-1 1" ctrllimited="true" gear="1"/>
     <motor  forcerange="-1 1"  class="wx250s" name="gripper" joint="left_finger" ctrlrange="-1 1" ctrllimited="true" gear="1"/> <!---->
   </actuator>

@@ -5,7 +5,7 @@ cpus_per_task: 12
 gpus-per-node: rtx8000:1
 mem_gb: 40
 tasks_per_node: 1
-gres: gpu:1
+# gres: gpu:1
 submitit_folder: ${hydra.sweep.dir}/submitit/%j
 timeout_min: 720
 nodes: 1

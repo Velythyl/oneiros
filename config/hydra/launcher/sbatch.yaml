@@ -2,6 +2,7 @@
 partition: long
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
 cpus_per_task: 12
+gpus-per-node: rtx8000:1
 mem_gb: 40
 tasks_per_node: 1
 gres: gpu:1

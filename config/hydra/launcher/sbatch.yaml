@@ -1,12 +1,12 @@
 # @package hydra.launcher
 partition: long
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
-cpus_per_task: 6
-mem_gb: 32
+cpus_per_task: 12
+mem_gb: 40
 tasks_per_node: 1
 gres: gpu:1
 submitit_folder: ${hydra.sweep.dir}/submitit/%j
-timeout_min: 179
+timeout_min: 720
 nodes: 1
 name: ${hydra.job.name}
 array_parallelism: 10 # max num of tasks to run in parallel (via job array)

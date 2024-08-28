@@ -150,7 +150,7 @@ class WidowReacher(MujocoEnv, utils.EzPickle):
             **kwargs,
         )
 
-        self.initial_goal = np.array([0.3, 0.0, 0.3])
+        self.initial_goal = np.array([0.4, 0.0, 0.3])
         self.goal = self.initial_goal
         self.step_count = 0
 

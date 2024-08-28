@@ -192,7 +192,7 @@ class WidowReacher(PipelineEnv):
 
     kwargs['n_frames'] = n_frames
 
-    self.initial_target = jp.array([0.3, 0.0, 0.3])
+    self.initial_target = jp.array([0.4, 0.0, 0.3])
 
     super().__init__(sys=sys, backend=backend, **kwargs)
 
@@ -242,11 +242,6 @@ class WidowReacher(PipelineEnv):
       return pipeline_state.replace(q=q, qd=qd)
 
   def step(self, state: State, action: jax.Array) -> State:
-
-    # HANDLE ACTION
-    #action = jax.lax.cos(action)
-    #action = action.at[-2:].set(0) * 0.2
-
     pipeline_state = self.pipeline_step(state.sys, state.pipeline_state, action)
     pipeline_state = self.set_target_body(pipeline_state, self.get_target_pos(state))
 

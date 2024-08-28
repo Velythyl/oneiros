@@ -95,6 +95,11 @@ class PPO(_Alg):
     def save(self, path, prefix=None):
         from torch import jit
 
+        torch.save(self.agent.state_dict(), f'{path}/{"" if prefix is None else str(prefix)}weights.pt')
+        model_shape = str(self.agent)
+        with open(f'{path}/{"" if prefix is None else str(prefix)}model_shape.txt', 'w') as f:
+            f.write(model_shape)
+
         self.agent.eval()
         x = torch.ones(self.train_envs.ONEIROS_METADATA.single_observation_space).to(self.device)[None]
         net_trace = jit.trace(self.agent, x)

@@ -7,8 +7,8 @@
     <numeric data="10000" name="constraint_limit_stiffness"/>
     <numeric data="20000" name="constraint_stiffness"/>
     <numeric data="0.1" name="constraint_vel_damping"/>
-    <numeric data="-1.0" name="vel_damping"/>
-    <numeric data="-1.0" name="ang_damping"/>
+    <numeric data="-1" name="vel_damping"/>
+    <numeric data="-1" name="ang_damping"/>
     <!--<numeric data="0.5" name="baumgarte_erp"/>-->
     <numeric data="0.3" name="spring_mass_scale"/>
     <numeric data="1.0" name="spring_inertia_scale"/>
@@ -156,6 +156,7 @@
     <joint joint1="left_finger" joint2="right_finger" polycoef="0 -1 0 0 0"/>
   </equality>
 
+  <!--
   <actuator>
     <motor  forcerange="-35 35"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="50" class="wx250s" name="waist" joint="waist"/>
     <motor forcerange="-35 35"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="150" class="wx250s" name="shoulder" joint="shoulder" />
@@ -164,7 +165,7 @@
     <motor forcerange="-35 35"   ctrllimited="true" ctrlrange="-1.0 1.0" gear="50" class="wx250s" name="wrist_angle" joint="wrist_angle" />
     <motor forcerange="-0.1 0.1"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="wrist_rotate" joint="wrist_rotate" />
     <motor forcerange="-0.1 0.1"  ctrllimited="true" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="gripper" joint="left_finger" />
-  </actuator>
+  </actuator>-->
 
 
   <!--
@@ -185,14 +186,14 @@
 	</actuator>-->
 
 
-  <!--
+
   <actuator>
-    <position forcerange="-80 80" kv="50" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-40 40" kv="2" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
-    <position forcerange="-50 50" kv="2" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
-    <position forcerange="-100 100" kv="2" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-100 100" kv="2" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
-    <position forcerange="-100 100" kv="2" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-100 100" kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/>
-  </actuator>-->
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="2"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="2"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="10"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="10"/>
+  </actuator>
 </mujoco>

@@ -36,6 +36,9 @@
           <geom type="sphere" size="0.0006" rgba="1 0 0 1"/>
         </default>
       </default>
+      <default class="nocollision">
+        <geom group="3" type="mesh" conaffinity="0" contype="0"/>
+      </default>
     </default>
   </default>
 
@@ -61,19 +64,19 @@
             diaginertia="0.00364425 0.003463 0.000399348"/>
           <joint name="shoulder" range="-1.88496 1.98968"/>
           <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="visual"/>
-          <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="collision"/>
+          <geom quat="1 0 0 1" mesh="wx250s_3_upper_arm" class="nocollision"/>
           <body name="wx250s/upper_forearm_link" pos="0.04975 0 0.25">
             <inertial pos="0.107963 0.000115876 0" quat="0.000980829 0.707106 -0.000980829 0.707106" mass="0.234589"
               diaginertia="0.000888 0.000887807 3.97035e-05"/>
             <joint name="elbow" range="-2.14675 1.6057"/>
             <geom mesh="wx250s_4_upper_forearm" class="visual"/>
-            <geom mesh="wx250s_4_upper_forearm" class="collision"/>
+            <geom mesh="wx250s_4_upper_forearm" class="nocollision"/>
             <body name="wx250s/lower_forearm_link" pos="0.175 0 0">
               <inertial pos="0.0374395 0.00522252 0" quat="-0.0732511 0.703302 0.0732511 0.703302" mass="0.220991"
                 diaginertia="0.0001834 0.000172527 5.88633e-05"/>
               <joint name="forearm_roll" axis="1 0 0" range="-3.14158 3.14158"/>
               <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="visual"/>
-              <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="collision"/>
+              <geom quat="0 1 0 0" mesh="wx250s_5_lower_forearm" class="nocollision"/>
               <body name="wx250s/wrist_link" pos="0.075 0 0">
                 <inertial pos="0.04236 -1.0663e-05 0.010577" quat="0.608721 0.363497 -0.359175 0.606895" mass="0.084957"
                   diaginertia="3.29057e-05 3.082e-05 2.68343e-05"/>
@@ -130,6 +133,7 @@
     <joint joint1="left_finger" joint2="right_finger" polycoef="0 -1 0 0 0"/>
   </equality>
 
+  <!--
   <actuator>
     <motor ctrlrange="-1.0 1.0" gear="150" class="wx250s" name="waist" joint="waist" />
     <motor ctrlrange="-1.0 1.0" gear="150" class="wx250s" name="shoulder" joint="shoulder" />
@@ -137,18 +141,18 @@
     <motor ctrlrange="-1.0 1.0" gear="150" class="wx250s" name="forearm_roll" joint="forearm_roll" />
     <motor ctrlrange="-1.0 1.0" gear="150" class="wx250s" name="wrist_angle" joint="wrist_angle" />
     <motor forcerange="-1 1" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   />
-    <motor forcerange="-1 1" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="gripper" joint="left_finger"  /> <!---->
+    <motor forcerange="-1 1" ctrlrange="-1.0 1.0" gear="1" class="wx250s" name="gripper" joint="left_finger"  />
+  </actuator>-->
+
+
+  <actuator>
+    <position   class="wx250s" name="waist" joint="waist"  kp="75" kv="5"/>
+    <position   class="wx250s" name="shoulder" joint="shoulder"  kp="75" kv="5"/>
+    <position   class="wx250s" name="elbow" joint="elbow"  kp="75" kv="5"/>
+    <position   class="wx250s" name="forearm_roll" joint="forearm_roll"  kp="75" kv="5"/>
+    <position   class="wx250s" name="wrist_angle" joint="wrist_angle"  kp="75" kv="5"/>
+    <position   class="wx250s" name="wrist_rotate" joint="wrist_rotate"  kp="75" kv="5"/>
+    <position   class="wx250s" name="gripper" joint="left_finger" kp="200" />
   </actuator>
 
-  <!--
-  <actuator>
-    <position kp="50"  class="wx250s" name="waist" joint="waist"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="shoulder" joint="shoulder"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="elbow" joint="elbow"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="forearm_roll" joint="forearm_roll"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="wrist_angle" joint="wrist_angle"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="wrist_rotate" joint="wrist_rotate"  kp="75" kv="5"/>
-    <position kp="50"  class="wx250s" name="gripper" joint="left_finger" kp="200" />
-  </actuator>
--->
 </mujoco>

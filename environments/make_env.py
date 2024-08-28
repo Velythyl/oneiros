@@ -385,7 +385,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 
     DO_FRAMESTACK = slice_multiplex(multiplex_env_cfg, 0).framestack > 1
     DO_MAT_FRAMESTACK = slice_multiplex(multiplex_env_cfg, 0).mat_framestack_instead
-    LAST_ACTION = slice_multiplex(multiplex_env_cfg, 0).last_action
+    LAST_ACTION = slice_multiplex(multiplex_env_cfg, 0).last_action and not "widow" in multiplex_env_cfg.env_key[0]
 
 
     for i, env in enumerate(base_envs):
@@ -514,7 +514,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 def make_sim2sim(multienv_cfg, seed: int, save_path: str):
     multienv_cfg = marshall_multienv_cfg(multienv_cfg)
 
-    DEBUG_VIDEO = False # True # False # True #False # True # True # False #True #False
+    DEBUG_VIDEO = False # True #False #True #False # False # True # False # True #False # True # True # False #True #False
 
     if not DEBUG_VIDEO:
         #KEEP_ALIVE = KeepAlive()
@@ -551,7 +551,7 @@ def make_sim2sim(multienv_cfg, seed: int, save_path: str):
                 DEBUG_ACTION_SEQUENCE = torch.concatenate(
                             [torch.from_numpy(np.random.uniform(low=-10, high=10, size=eval_and_video_envs[-1].action_space.shape[1:])[None]).to("cuda")[None] for i in
                              range(NUM_DEBUG_STEPS)]).detach()
-                #DEBUG_ACTION_SEQUENCE[:,:,0] = torch.pi * 10
+                DEBUG_ACTION_SEQUENCE[:,:,0] = torch.pi * 10
 
 
 

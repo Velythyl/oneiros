@@ -160,15 +160,17 @@
   </equality>
 
   <!-- todo make forcerange and gear higher?-->
-  <actuator><!-- kp="75" kv="5" -->
+  <!--
+  <actuator>
     <motor forcerange="-35 35" class="wx250s" name="waist" joint="waist" ctrlrange="-1 1" ctrllimited="true" gear="15"/>
     <motor forcerange="-35 35"  class="wx250s" name="shoulder" joint="shoulder" ctrlrange="-1 1" ctrllimited="true" gear="15"/>
     <motor forcerange="-35 35"  class="wx250s" name="elbow" joint="elbow"  ctrlrange="-1 1" ctrllimited="true" gear="15"/>
     <motor forcerange="-35 35" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-1 1" ctrllimited="true" gear="5"/>
     <motor  forcerange="-35 35" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1 1" ctrllimited="true" gear="5"/>
     <motor  forcerange="-1 1"  class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-0.01 0.01" ctrllimited="true" gear="0.01"/>
-    <motor  forcerange="-1 1"  class="wx250s" name="gripper" joint="left_finger" ctrlrange="-1 1" ctrllimited="true" gear="0.01"/> <!---->
+    <motor  forcerange="-1 1"  class="wx250s" name="gripper" joint="left_finger" ctrlrange="-1 1" ctrllimited="true" gear="0.01"/>
   </actuator>
+  -->
 
   <!--
   <actuator>
@@ -181,14 +183,14 @@
     <position  forcerange="-35 35" kv="10" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/>
   </actuator>-->
 
-  <!--
+
   <actuator>
-    <position forcerange="-3 3" kv="2" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-9 9" kp="5" kv="2" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
-    <position forcerange="-7 7" kp="5" kv="2" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
-    <position forcerange="-2 2" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-2 2"  class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
-    <position forcerange="-1 1" kp="5" kv="2" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
-    <position forcerange="-1 1" kp="5" kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="1"/>
-  </actuator>-->
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="waist" joint="waist"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="shoulder" joint="shoulder"   ctrlrange="-1.88496 1.98968" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="elbow" joint="elbow"  ctrlrange="-2.14675 1.6057" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="forearm_roll" joint="forearm_roll" ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="1"/>
+    <position forcerange="-35 35" kp="50" kv="2" class="wx250s" name="wrist_angle" joint="wrist_angle" ctrlrange="-1.74533 2.14675" ctrllimited="true" gear="1"/>
+    <position forcerange="-0.1 0.1" kp="5" kv="2" class="wx250s" name="wrist_rotate" joint="wrist_rotate"   ctrlrange="-3.14158 3.14158" ctrllimited="true" gear="10"/>
+    <position forcerange="-0.1 0.1" kp="5" kv="2" class="wx250s" name="gripper" joint="left_finger" ctrlrange="0.015 0.037" ctrllimited="true" gear="10"/>
+  </actuator>
 </mujoco>

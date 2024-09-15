@@ -1,0 +1,21 @@
+env_key:
+  - mujoco-go1
+  - braxgeneralized-go1
+  - braxpositional-go1
+  - braxspring-go1
+  - braxmjx-go1
+
+device: cuda
+num_env: 100
+max_episode_length: 1000
+last_action: True
+action_repeat: None  # todo
+
+#framestack: 0 #10 #10 #8 # todo
+#mat_framestack_instead: False
+
+dr_percent_below: 1.0
+dr_percent_above: 1.0
+dr_do_on_reset: False
+dr_do_on_N_step: 0
+dr_do_at_creation: False

@@ -1,0 +1,41 @@
+# @package hydra.launcher
+partition: long
+_target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
+cpus_per_task: 12
+mem_gb: 40
+tasks_per_node: 1
+stderr_to_stdout: True
+gres: gpu:32gb:1 # gpu:rtx8000:1 # No MIG: gpu:32gb:1
+submitit_folder: ${hydra.sweep.dir}/submitit/%j
+timeout_min: 1440 # 2 days: 2880 ; 12h : 720 ; 1 day: 1440
+nodes: 1
+name: ${hydra.job.name}
+array_parallelism: 10 # max num of tasks to run in parallel (via job array)
+setup:
+  - "export WANDB_DIR=${hydra.sweep.dir}"
+  - "export BREAK=False"
+  - "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/cudnn86/lib"
+  - "export CPATH=$CPATH:$HOME/cudnn86/include"
+  - 'export WANDB_API_KEY="ANONYMOUS"'
+  - 'export DISKCACHE_DIR=${oc.env:SCRATCH}/diskcache'
+  - 'export PATH=/venv/bin:$PATH'
+  - "module load python/3.8"
+  - "module load cuda/11.8"
+  - "ulimit -n 16384"
+  - "source $HOME/oneiros/venv/bin/activate"
+  - "sleep $((RANDOM % 100))"
+
+#  python3.9 -m pip install --upgrade "jaxlib==0.4.13+cuda11.cudnn86" "jax[cuda11_pip]==0.4.13" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html --no-cache
+# pip3 install -r requirements.txt
+# pip3 install flax==0.7.4
+#  python3.9 -m pip install --upgrade "jaxlib[cuda11_pip]==0.4.13" "jax[cuda11_pip]==0.4.13" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html --no-cache
+# pip install hydra-submitit-launcher --upgrade
+# python3 main.py --multirun hydra/launcher=sbatch +hydra/sweep=sbatch wandb.seed=1,2
+# python3 main.py --multirun hydra/launcher=sbatch +hydra/sweep=sbatch sim=sim10k_10000 wandb.seed=1,2,3,4,5 sim.bad_init=False,True dist=four_bananas,rastrigin10d,rastrigin2d,michalewicz10d,michalewicz2d,five_mvn_dim10,rosenbrock10d,rosenbrock2d adapt=indep,mape_single,mape_test,haario,random_walk,mala wandb.project=milaclustermbrma
+
+
+#   - 'export WANDB_WATCH="false"'
+#  - 'export WANDB__SERVICE_WAIT=300'
+ # - 'export WANDB_MODE="offline"'
+#
+

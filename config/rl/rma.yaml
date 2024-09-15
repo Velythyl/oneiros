@@ -1,0 +1,37 @@
+# `half_cheetah` configuration
+
+alg: "rma"
+
+total_timesteps: 75000000
+test_episodes: 5
+test_steps: 1000
+anneal_lr: False
+
+# batch_size: 256
+learning_rate: 3e-4
+buffer_size: 1000
+
+# PPO Related
+rollout_steps: 128
+n_epochs: 4
+clip_range: 0.1
+
+# our alg related
+gather_data: True
+
+# TODO
+num_steps: 16
+max_grad_norm: 1
+update_epochs: 8
+num_minibatches: 32
+minibatch_size: 
+gamma: 0.97
+gae_lambda: 0.95
+norm_adv: True
+clip_coef: 0.2
+clip_vloss: True
+ent_coef: 0.01
+vf_coef: 0.5
+target_kl: null
+tau: 0.005
+

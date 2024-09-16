@@ -1,10 +1,9 @@
 # oneiros
 
-Oneiros, the god of dreams, of reflections of our world. 
-
-In this project, we train RL policies in many different reflections of our world known as simulators.
-
+Oneiros is the ancient greek personifications of dreams, of reflections of our world. 
+In this project, we utilize many different reflections of our world known as "simulators" to train policies in many different visions of our world.
 We implement "sim+sim" training for increased policy transferability, and "sim2sim" transfer as a benchmark for sim2real.
+We find that sim+sim training endows PPO policies with a greater transferability, both sim2sim and sim2real.
 
 ## INSTALL
 

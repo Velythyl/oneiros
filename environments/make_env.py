@@ -143,7 +143,8 @@ def make_mujoco(mujoco_cfg, seed):
         "reacher": "Reacher-v4",
         "walker2d": "Walker2d-v4",
         "go1": "Go1",
-        "widow": "Widow"
+        "widow": "Widow",
+        "humanoid": "Humanoid-v4"
     }[BRAX_ENVNAME]
 
     if BRAX_ENVNAME in CUSTOM_ENVS:
@@ -371,7 +372,10 @@ def make_multiplex(multiplex_env_cfg, seed):
             from environments.wrappers.envspecific.widow import WidowRandomPosition
             base_envs[i] = WidowRandomPosition(env, brax_or_mujoco, WIDOW_RANDOM_STEPS, device=multiplex_env_cfg.device[0])
 
-
+    if "humanoid" in multiplex_env_cfg.env_key[0]:
+        for i, (env, envkey) in enumerate(zip(base_envs, multiplex_env_cfg.env_key)):
+            from environments.wrappers.envspecific.humanoid import HumanoidObsCrop
+            base_envs[i] = HumanoidObsCrop(env, device=multiplex_env_cfg.device[0])
 
     def single_action_space(env):
         return env.action_space.shape[1:]

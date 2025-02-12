@@ -4,8 +4,8 @@ defaults:
   - rl: ppo
   - env_method: vanilla_ppo
   - multienv: brax2brax
-  - env@train_env: humanoid-no-dr
-  - env@eval_env: humanoid-no-dr
+  - env@train_env: humanoid-with-dr
+  - env@eval_env: humanoid-with-dr
   - rl@ppo: ppo
   - rl@sac: sac
   - rl@rma: rma

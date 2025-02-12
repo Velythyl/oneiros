@@ -1,12 +1,12 @@
 env_key:
   - braxspring-humanoid
-  #- braxpositional-humanoid
-  #- braxgeneralized-humanoid
-  #- braxmjx-humanoid
+  - braxpositional-humanoid
+  - braxgeneralized-humanoid
+  - braxmjx-humanoid
   - mujoco-humanoid
 
 device: cuda
-num_env: 10
+num_env: 100
 max_episode_length: 1000
 last_action: True
 action_repeat: None  # todo

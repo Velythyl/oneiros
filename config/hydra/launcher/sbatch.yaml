@@ -16,7 +16,7 @@ setup:
   - "export BREAK=False"
   - "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/cudnn86/lib"
   - "export CPATH=$CPATH:$HOME/cudnn86/include"
-  - 'export WANDB_API_KEY="ANONYMOUS"'
+  - 'export WANDB_API_KEY="afe8f40c99e87c32058996ac31bf96e400ea7cc6"'
   - 'export DISKCACHE_DIR=${oc.env:SCRATCH}/diskcache'
   - 'export PATH=/venv/bin:$PATH'
   - "module load python/3.8"

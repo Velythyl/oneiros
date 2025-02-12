@@ -20,7 +20,7 @@ class HumanoidObsCrop(gym.Wrapper):
         return self.obs(super().reset())
 
     def step(self, action):
-        obs, rew, done, info = self.inner_step(self.action_state)
+        obs, rew, done, info = super().step(action)
 
         obs = self.obs(obs)
 

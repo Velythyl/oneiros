@@ -502,7 +502,7 @@ def make_multiplex(multiplex_env_cfg, seed):
 
             return ret
 
-    env = GetPriv(env)
+    #env = GetPriv(env)
 
     assert env.observation_space.shape[0] == PROTO_NUM_ENV * len(base_envs)
 

@@ -21,6 +21,7 @@ setup:
   - 'export PATH=/venv/bin:$PATH'
   - "module load python/3.8"
   - "module load cuda/11.8"
+  - "module load libffi"
   - "ulimit -n 16384"
   - "source $HOME/oneiros/venv/bin/activate"
   - "sleep $((RANDOM % 100))"
